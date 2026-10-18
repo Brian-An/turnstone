@@ -86,9 +86,9 @@ struct MediaEditor: View {
     private func rectangle(_ rect: Binding<UnitRect>, size: CGSize, shaded: Bool) -> some View {
         let value = rect.wrappedValue
         return ZStack(alignment: .bottomTrailing) {
-            Rectangle().fill(shaded ? Color(red: options.color.red, green: options.color.green, blue: options.color.blue).opacity(options.blur ? 0.45 : options.color.alpha) : Color.orange.opacity(0.08))
-            Rectangle().stroke(Color.orange, lineWidth: 2)
-            Image(systemName: "arrow.up.left.and.arrow.down.right").font(.caption.bold()).padding(5).background(Color.orange).foregroundStyle(.white)
+            Rectangle().fill(shaded ? Color(red: options.color.red, green: options.color.green, blue: options.color.blue).opacity(options.blur ? 0.45 : options.color.alpha) : Color.accentColor.opacity(0.08))
+            Rectangle().stroke(Color.accentColor, lineWidth: 2)
+            Image(systemName: "arrow.up.left.and.arrow.down.right").font(.caption.bold()).padding(5).background(Color.accentColor).foregroundStyle(.white)
                 .gesture(DragGesture(minimumDistance: 0).onChanged { gesture in
                     let origin = cropOrigin ?? value; cropOrigin = origin
                     let parts = ratio.split(separator: ":").compactMap { Double($0) }
@@ -181,7 +181,7 @@ struct MediaEditor: View {
             MediaFilmstrip(images: preview.frames).frame(height: 54).overlay(GeometryReader { geometry in
                 let points = splitMode == "Equal clips" ? (1..<max(2, options.equalParts)).map { duration * Double($0) / Double(max(2, options.equalParts)) } : options.splitPoints
                 ForEach(Array(points.enumerated()), id: \.offset) { index, point in
-                    Rectangle().fill(.orange).frame(width: 3).contentShape(Rectangle().inset(by: -5)).offset(x: geometry.size.width * point / duration)
+                    Rectangle().fill(Color.accentColor).frame(width: 3).contentShape(Rectangle().inset(by: -5)).offset(x: geometry.size.width * point / duration)
                         .gesture(DragGesture(minimumDistance: 0, coordinateSpace: .named("split")).onChanged { value in
                             guard splitMode == "Custom cuts", options.splitPoints.indices.contains(index) else { return }
                             let lower = index > 0 ? options.splitPoints[index - 1] + 0.01 : 0.01
@@ -202,7 +202,7 @@ struct MediaEditor: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack { Button("Add Redaction") { let value = Redaction(rect: UnitRect(x: 0.25, y: 0.25, width: 0.5, height: 0.5), start: position, end: duration); options.redactions.append(value); selectedRedaction = value.id }; Spacer(); Picker("Style", selection: $options.blur) { Text("Solid").tag(false); Text("Blur").tag(true) }.pickerStyle(.segmented).frame(width: 180) }
             if !options.blur { ColorPicker("Redaction color", selection: Binding(get: { Color(red: options.color.red, green: options.color.green, blue: options.color.blue, opacity: options.color.alpha) }, set: { color in if let value = NSColor(color).usingColorSpace(.deviceRGB) { options.color = ColorValue(value.redComponent, value.greenComponent, value.blueComponent, value.alphaComponent) } })) }
-            ForEach($options.redactions) { $redaction in HStack { Image(systemName: "rectangle.dashed").foregroundStyle(.orange); timeField("From", $redaction.start); timeField("To", Binding(get: { redaction.end ?? duration }, set: { redaction.end = $0 })); Spacer(); Button { options.redactions.removeAll { $0.id == redaction.id } } label: { Image(systemName: "trash") } } }
+            ForEach($options.redactions) { $redaction in HStack { Image(systemName: "rectangle.dashed").foregroundStyle(Color.accentColor); timeField("From", $redaction.start); timeField("To", Binding(get: { redaction.end ?? duration }, set: { redaction.end = $0 })); Spacer(); Button { options.redactions.removeAll { $0.id == redaction.id } } label: { Image(systemName: "trash") } } }
             Text("Drag a box to move it. Drag its bottom right corner to resize.").font(.caption).foregroundStyle(.secondary)
         }
     }
@@ -226,7 +226,7 @@ private struct MediaWaveform: View {
         let step = size.width / CGFloat(values.count)
         var path = Path()
         for (index, value) in values.enumerated() { let height = max(2, CGFloat(value) * size.height * 0.9); let x = CGFloat(index) * step; path.move(to: CGPoint(x: x, y: (size.height - height) / 2)); path.addLine(to: CGPoint(x: x, y: (size.height + height) / 2)) }
-        context.stroke(path, with: .color(.orange), style: StrokeStyle(lineWidth: max(1, step * 0.55), lineCap: .round))
+        context.stroke(path, with: .color(Color.accentColor), style: StrokeStyle(lineWidth: max(1, step * 0.55), lineCap: .round))
     } }
 }
 private struct MediaFilmstrip: View {
@@ -242,12 +242,12 @@ private struct MediaRangeTrack: View {
     var body: some View { GeometryReader { geometry in
         ZStack(alignment: .leading) {
             if images.isEmpty { MediaWaveform(samples: samples).padding(.vertical, 8) } else { MediaFilmstrip(images: images) }
-            Rectangle().fill(Color.orange.opacity(0.12)).frame(width: max(0, (end - start) / duration * geometry.size.width)).offset(x: start / duration * geometry.size.width)
+            Rectangle().fill(Color.accentColor.opacity(0.12)).frame(width: max(0, (end - start) / duration * geometry.size.width)).offset(x: start / duration * geometry.size.width)
             handle("Trim start").offset(x: start / duration * geometry.size.width - 6).gesture(DragGesture(minimumDistance: 0, coordinateSpace: .named("trim")).onChanged { start = min(end - 0.01, max(0, $0.location.x / geometry.size.width * duration)) })
             handle("Trim end").offset(x: end / duration * geometry.size.width - 6).gesture(DragGesture(minimumDistance: 0, coordinateSpace: .named("trim")).onChanged { end = max(start + 0.01, min(duration, $0.location.x / geometry.size.width * duration)) })
         }.coordinateSpace(name: "trim")
     }.clipShape(RoundedRectangle(cornerRadius: 8)) }
-    private func handle(_ title: String) -> some View { RoundedRectangle(cornerRadius: 4).fill(Color.orange).frame(width: 12).overlay(Capsule().fill(.white).frame(width: 2, height: 22)).accessibilityLabel(title) }
+    private func handle(_ title: String) -> some View { RoundedRectangle(cornerRadius: 4).fill(Color.accentColor).frame(width: 12).overlay(Capsule().fill(.white).frame(width: 2, height: 22)).accessibilityLabel(title) }
 }
 private struct MediaBleepTrack: View {
     @Binding var ranges: [TimeRange]
@@ -257,7 +257,7 @@ private struct MediaBleepTrack: View {
         ZStack(alignment: .leading) {
             RoundedRectangle(cornerRadius: 8).fill(.quaternary).gesture(DragGesture(minimumDistance: 4).onEnded { value in let start = max(0, min(value.startLocation.x, value.location.x) / geometry.size.width * duration); let end = min(duration, max(value.startLocation.x, value.location.x) / geometry.size.width * duration); if end - start > 0.01 { ranges.append(TimeRange(start: start, end: end)) } })
             ForEach($ranges) { $range in
-                ZStack { RoundedRectangle(cornerRadius: 7).fill(Color.orange.opacity(0.65)); Text("Bleep").font(.caption.bold()).foregroundStyle(.white); HStack { edge($range, leading: true, width: geometry.size.width); Spacer(minLength: 0); edge($range, leading: false, width: geometry.size.width) }.padding(.horizontal, 4) }
+                ZStack { RoundedRectangle(cornerRadius: 7).fill(Color.accentColor.opacity(0.65)); Text("Bleep").font(.caption.bold()).foregroundStyle(.white); HStack { edge($range, leading: true, width: geometry.size.width); Spacer(minLength: 0); edge($range, leading: false, width: geometry.size.width) }.padding(.horizontal, 4) }
                     .frame(width: max(14, (range.end - range.start) / duration * geometry.size.width)).offset(x: range.start / duration * geometry.size.width)
                     .gesture(DragGesture().onChanged { value in let initial = original ?? range; original = initial; let start = min(duration - (initial.end - initial.start), max(0, initial.start + value.translation.width / geometry.size.width * duration)); range.start = start; range.end = start + initial.end - initial.start }.onEnded { _ in original = nil })
             }

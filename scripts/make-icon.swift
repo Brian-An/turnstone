@@ -12,7 +12,7 @@ for points in [16, 32, 128, 256, 512] {
         let bounds = NSRect(x: 0, y: 0, width: pixels, height: pixels)
         let inset = CGFloat(pixels) * 0.06
         let shape = NSBezierPath(roundedRect: bounds.insetBy(dx: inset, dy: inset), xRadius: CGFloat(pixels) * 0.21, yRadius: CGFloat(pixels) * 0.21)
-        NSGradient(starting: NSColor(red: 1, green: 0.65, blue: 0.22, alpha: 1), ending: NSColor(red: 0.95, green: 0.25, blue: 0.10, alpha: 1))!.draw(in: shape, angle: -55)
+        NSGradient(starting: NSColor(red: 0.32, green: 0.68, blue: 1, alpha: 1), ending: NSColor(red: 0.05, green: 0.32, blue: 0.86, alpha: 1))!.draw(in: shape, angle: -55)
         if let symbol = NSImage(systemSymbolName: "arrow.triangle.2.circlepath", accessibilityDescription: nil)?.withSymbolConfiguration(.init(pointSize: CGFloat(pixels) * 0.60, weight: .medium).applying(.init(paletteColors: [.white]))) {
             symbol.draw(in: bounds.insetBy(dx: CGFloat(pixels) * 0.19, dy: CGFloat(pixels) * 0.19))
         }

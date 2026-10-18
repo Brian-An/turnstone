@@ -26,7 +26,7 @@ struct PDFOrganizer: View {
                                     Image(nsImage: thumbnail(page, rotation: edit.rotation)).resizable().scaledToFit().frame(height: 170).frame(maxWidth: .infinity)
                                         .background(.white, in: RoundedRectangle(cornerRadius: 8))
                                 }
-                                Text("\(index + 1)").font(.caption.bold()).foregroundStyle(.white).padding(7).background(.orange, in: Circle()).padding(6)
+                                Text("\(index + 1)").font(.caption.bold()).foregroundStyle(.white).padding(7).background(Color.accentColor, in: Circle()).padding(6)
                             }
                             HStack(spacing: 10) {
                                 Button { change(edit.id) { $0.rotation = ($0.rotation + 90) % 360 } } label: { Image(systemName: "rotate.right") }.help("Rotate page")

@@ -50,6 +50,18 @@ Every petal in that branch has an opaque system background beneath its selection
 The shelf row retains a rectangular drag target across its empty space.
 Older-macOS material fallbacks, dark appearance, and accessibility appearance settings were checked in code but were not exercised on separate runtime configurations.
 
+## System accent theme verification
+
+Replaced decorative orange with the system accent color across the wheel, window controls, crop and selection handles, media timelines and waveforms, and page badges.
+The generated application icon uses a blue gradient.
+Semantic warning colors and editable annotation colors retain their existing meaning.
+The release app builds and passes strict code-signature verification.
+Native UI inspection confirms the blue accent on the welcome screen, conversion wheel, and photo editor controls.
+Updated welcome and wheel screenshots show the system accent theme.
+A separate reviewer found no actionable issues in the color change.
+This appearance-only change was checked with a release build and native UI inspection; the conversion suite was not rerun.
+Changing the system accent preference during runtime was not exercised.
+
 ## Remaining verification and fidelity limits
 
 The global Finder drag-and-modifier gesture remains unverified end to end.

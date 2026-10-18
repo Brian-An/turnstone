@@ -69,7 +69,7 @@ struct WheelAppearance: View {
             }
             VStack(spacing: 4) {
                 if let icon { Image(nsImage: icon).resizable().scaledToFit().frame(width: 27, height: 27) }
-                else { Image(systemName: "arrow.triangle.2.circlepath").font(.system(size: 23, weight: .light)).foregroundStyle(.orange) }
+                else { Image(systemName: "arrow.triangle.2.circlepath").font(.system(size: 23, weight: .light)).foregroundStyle(Color.accentColor) }
                 Text(centerTitle).font(.system(size: 9, weight: .medium)).lineLimit(1).minimumScaleFactor(0.8)
             }
             .frame(width: 84, height: 84)
@@ -102,15 +102,15 @@ private struct WheelGlass<S: Shape>: ViewModifier {
             content.background {
                 ZStack {
                     shape.fill(Color(nsColor: .windowBackgroundColor))
-                    if selected { shape.fill(Color.orange.opacity(0.20)) }
+                    if selected { shape.fill(Color.accentColor.opacity(0.20)) }
                 }
             }
             .overlay(shape.stroke(Color.primary.opacity(contrast == .increased ? 0.45 : 0.12), lineWidth: contrast == .increased ? 1 : 0.5))
         } else if #available(macOS 26, *) {
-            content.glassEffect(.regular.tint(selected ? .orange.opacity(0.25) : nil), in: shape)
+            content.glassEffect(.regular.tint(selected ? Color.accentColor.opacity(0.25) : nil), in: shape)
         } else {
             content.background(.ultraThinMaterial, in: shape)
-                .background(selected ? Color.orange.opacity(0.22) : .clear, in: shape)
+                .background(selected ? Color.accentColor.opacity(0.22) : .clear, in: shape)
                 .overlay(shape.stroke(Color.primary.opacity(contrast == .increased ? 0.45 : 0.10), lineWidth: 0.5))
         }
     }

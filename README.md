@@ -4,6 +4,7 @@ A native, open source, offline file utility for macOS, inspired by [Tangerine](h
 Drag a file, tap a modifier, and drop onto a contextual wheel.
 The implementation uses original Swift code and macOS system artwork.
 The minimal interface uses native Liquid Glass on macOS 26 and later, with translucent material and standard controls on older Macs.
+Controls and selection highlights follow the Mac’s system accent color, with a blue application icon.
 
 ![Native conversion wheel](docs/screenshots/wheel.jpg)
 
