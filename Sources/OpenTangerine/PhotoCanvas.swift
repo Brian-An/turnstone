@@ -58,7 +58,7 @@ struct PhotoCanvas: View {
                     }
                     if let drawing {
                         let rect = screenRect(drawing.rect, size: size)
-                        Rectangle().stroke(Color.orange, style: StrokeStyle(lineWidth: 1.5, dash: [5, 3]))
+                        Rectangle().stroke(Color.accentColor, style: StrokeStyle(lineWidth: 1.5, dash: [5, 3]))
                             .frame(width: rect.width, height: rect.height).position(x: rect.midX, y: rect.midY).allowsHitTesting(false)
                         if kind == "pen", tool == .annotateImage {
                             Path { path in
@@ -124,7 +124,7 @@ struct PhotoCanvas: View {
         let isSelected = selected == region.id
         return ZStack(alignment: .topLeading) {
             Rectangle().fill(Color.clear).contentShape(Rectangle())
-                .overlay(Rectangle().stroke(isSelected ? Color.orange : Color.white.opacity(0.5), style: StrokeStyle(lineWidth: isSelected ? 1.5 : 1, dash: isSelected ? [] : [3, 3])))
+                .overlay(Rectangle().stroke(isSelected ? Color.accentColor : Color.white.opacity(0.5), style: StrokeStyle(lineWidth: isSelected ? 1.5 : 1, dash: isSelected ? [] : [3, 3])))
                 .frame(width: rect.width, height: rect.height).position(x: rect.midX, y: rect.midY)
                 .onTapGesture { selected = region.id; focused = true }
                 .gesture(moveGesture(id: region.id, size: size))
@@ -140,7 +140,7 @@ struct PhotoCanvas: View {
         let bounds = screenRect(rect, size: size)
         return ForEach(Corner.allCases, id: \.rawValue) { corner in
             RoundedRectangle(cornerRadius: 2).fill(Color.white).frame(width: 10, height: 10)
-                .overlay(RoundedRectangle(cornerRadius: 2).stroke(Color.orange, lineWidth: 1))
+                .overlay(RoundedRectangle(cornerRadius: 2).stroke(Color.accentColor, lineWidth: 1))
                 .contentShape(Rectangle().size(width: 18, height: 18))
                 .position(x: min(size.width - 5, max(5, corner.left ? bounds.minX : bounds.maxX)), y: min(size.height - 5, max(5, corner.top ? bounds.minY : bounds.maxY)))
                 .highPriorityGesture(resizeGesture(id: id, corner: corner, size: size))

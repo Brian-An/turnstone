@@ -9,7 +9,7 @@ struct HomeView: View {
     var body: some View {
         VStack(spacing: 0) {
             HStack(spacing: 10) {
-                Image(systemName: "arrow.triangle.2.circlepath").font(.system(size: 17, weight: .medium)).foregroundStyle(.orange)
+                Image(systemName: "arrow.triangle.2.circlepath").font(.system(size: 17, weight: .medium)).foregroundStyle(Color.accentColor)
                 Text("Open Tangerine").font(.system(size: 16, weight: .medium))
                 Spacer()
                 Button { model.showSettings() } label: { Image(systemName: "gearshape").frame(width: 18, height: 18) }.glassAction().help("Settings")
@@ -21,7 +21,7 @@ struct HomeView: View {
                         .multilineTextAlignment(.center).font(.callout).foregroundStyle(.secondary)
                     Button("Choose Files…") { model.chooseFiles() }.glassAction(prominent: true).controlSize(.large).keyboardShortcut("o")
                     Text(targeted ? "Drop to choose an operation" : "Or drop files anywhere in this window")
-                        .font(.caption).foregroundStyle(targeted ? .orange : .secondary)
+                        .font(.caption).foregroundStyle(targeted ? Color.accentColor : .secondary)
                 }.frame(maxWidth: .infinity).padding(.horizontal, 24).padding(.bottom, 20)
             }
             HStack {
@@ -30,7 +30,7 @@ struct HomeView: View {
                 Button("Recent Jobs") { model.showJobs() }.buttonStyle(.link)
             }.padding(16)
         }
-        .background(targeted ? Color.orange.opacity(0.06) : Color.clear)
+        .background(targeted ? Color.accentColor.opacity(0.06) : Color.clear)
         .dropDestination(for: URL.self) { urls, _ in model.wheel.show(files: urls, mode: .conversions, keyboard: true); return !urls.isEmpty } isTargeted: { targeted = $0 }
     }
 }
@@ -79,7 +79,7 @@ private struct JobRow: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
                 Image(systemName: job.finished ? (job.errors.isEmpty && !job.cancelled ? "checkmark.circle.fill" : "exclamationmark.circle") : "arrow.triangle.2.circlepath")
-                    .foregroundStyle(job.finished && job.errors.isEmpty ? .green : .orange)
+                    .foregroundStyle(job.finished ? (job.errors.isEmpty && !job.cancelled ? Color.green : Color.orange) : Color.accentColor)
                 VStack(alignment: .leading, spacing: 3) {
                     Text(job.request.operation.title).font(.headline)
                     Text(job.request.files.count == 1 ? job.request.files[0].lastPathComponent : "\(job.request.files.count) files")
@@ -203,7 +203,7 @@ struct SettingsView: View {
                 Spacer(minLength: 0)
             }.padding(24).frame(maxWidth: .infinity, alignment: .leading) }.id(refresh).tabItem { Label("Engines", systemImage: "puzzlepiece.extension") }
             VStack(spacing: 16) {
-                Image(systemName: "arrow.triangle.2.circlepath.circle.fill").font(.system(size: 60)).foregroundStyle(.orange)
+                Image(systemName: "arrow.triangle.2.circlepath.circle.fill").font(.system(size: 60)).foregroundStyle(Color.accentColor)
                 Text("Open Tangerine").font(.title.bold())
                 Text("An open source file utility for macOS.").foregroundStyle(.secondary)
                 Text("Independent implementation inspired by Tangerine.\nConversions run locally. Originals stay intact.").multilineTextAlignment(.center).font(.callout).foregroundStyle(.secondary)
