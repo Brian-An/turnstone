@@ -3,7 +3,7 @@ import AppKit
 import PDFKit
 import ImageIO
 import CoreText
-@testable import TangerineCore
+@testable import TurnstoneCore
 
 final class NativeEngineTests: XCTestCase {
     private var directory: URL!

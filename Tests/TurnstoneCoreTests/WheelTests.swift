@@ -1,5 +1,5 @@
 import XCTest
-@testable import TangerineCore
+@testable import TurnstoneCore
 
 final class WheelTests: XCTestCase {
     func testCenterOutsideAndPetalGapsCancelInsteadOfConverting() {

@@ -1,7 +1,7 @@
 import SwiftUI
 import AppKit
 import PDFKit
-import TangerineCore
+import TurnstoneCore
 
 @MainActor
 final class ImageEditorModel: ObservableObject {
@@ -228,7 +228,7 @@ struct MetadataControls: View {
             return
         }
         do {
-            guard let executable = ProcessRunner.locate("exiftool") else { throw TangerineError.missingDependency("ExifTool") }
+            guard let executable = ProcessRunner.locate("exiftool") else { throw TurnstoneError.missingDependency("ExifTool") }
             let context = try ExecutionContext()
             let json = try await context.runner.run(executable, arguments: ["-j", "-G1", "-s", files[0].path])
             // ExifTool returns a heterogeneous JSON object at this process boundary.

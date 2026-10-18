@@ -13,7 +13,7 @@ public struct NativeEngine {
     public init() {}
 
     public func perform(_ request: JobRequest, context: ExecutionContext) async throws -> [URL]? {
-        guard let first = request.files.first else { throw TangerineError.invalid("Select at least one file.") }
+        guard let first = request.files.first else { throw TurnstoneError.invalid("Select at least one file.") }
         try context.checkCancellation()
         let ext = Catalog.fileExtension(first)
         switch request.operation {
@@ -78,7 +78,7 @@ public struct NativeEngine {
             try Task.checkCancellation()
             return try finish(context)
         }
-        throw TangerineError.invalid("Could not decode \(url.lastPathComponent) as an image.")
+        throw TurnstoneError.invalid("Could not decode \(url.lastPathComponent) as an image.")
     }
 
     private func imageSize(_ url: URL) -> CGSize? {
@@ -100,7 +100,7 @@ public struct NativeEngine {
 
     private func encode(_ image: CGImage, to output: URL, quality: Double, properties: [CFString: Any] = [:], context: ExecutionContext) async throws {
         try context.checkCancellation()
-        guard quality.isFinite, (0...1).contains(quality) else { throw TangerineError.invalid("Choose a quality between zero and one.") }
+        guard quality.isFinite, (0...1).contains(quality) else { throw TurnstoneError.invalid("Choose a quality between zero and one.") }
         let identifiers = ["jpg": "public.jpeg", "png": "public.png", "heic": "public.heic", "tiff": "public.tiff", "bmp": "com.microsoft.bmp", "webp": "org.webmproject.webp", "avif": "public.avif"]
         let ext = output.pathExtension
         if let identifier = identifiers[ext], (CGImageDestinationCopyTypeIdentifiers() as! [String]).contains(identifier),
@@ -111,11 +111,11 @@ public struct NativeEngine {
             CGImageDestinationAddImage(destination, image, metadata as CFDictionary)
             if CGImageDestinationFinalize(destination) { return }
         }
-        guard let magick = ProcessRunner.locate("magick") else { throw TangerineError.missingDependency("ImageMagick") }
+        guard let magick = ProcessRunner.locate("magick") else { throw TurnstoneError.missingDependency("ImageMagick") }
         let intermediary = context.temporaryURL(extension: "png")
-        guard let destination = CGImageDestinationCreateWithURL(intermediary as CFURL, "public.png" as CFString, 1, nil) else { throw TangerineError.failed("Could not prepare the image encoder.") }
+        guard let destination = CGImageDestinationCreateWithURL(intermediary as CFURL, "public.png" as CFString, 1, nil) else { throw TurnstoneError.failed("Could not prepare the image encoder.") }
         CGImageDestinationAddImage(destination, image, nil)
-        guard CGImageDestinationFinalize(destination) else { throw TangerineError.failed("Could not prepare the image encoder.") }
+        guard CGImageDestinationFinalize(destination) else { throw TurnstoneError.failed("Could not prepare the image encoder.") }
         _ = try await context.runner.run(magick, arguments: [intermediary.path, "-quality", String(Int(min(1, max(0, quality)) * 100)), output.path])
     }
 
@@ -127,8 +127,8 @@ public struct NativeEngine {
 
     public func preview(files: [URL], tool: ToolID, options: EditOptions, maximumDimension: Int? = nil) throws -> CGImage {
         try Task.checkCancellation()
-        guard let first = files.first else { throw TangerineError.invalid("Select an image to preview.") }
-        if let maximumDimension, maximumDimension <= 0 { throw TangerineError.invalid("Choose a positive preview dimension.") }
+        guard let first = files.first else { throw TurnstoneError.invalid("Select an image to preview.") }
+        if let maximumDimension, maximumDimension <= 0 { throw TurnstoneError.invalid("Choose a positive preview dimension.") }
         if tool == .collage { return try collage(files, options: options, maximumDimension: maximumDimension) }
         var image = try loadImage(first, maximumDimension: maximumDimension)
         let original = maximumDimension == nil ? nil : imageSize(first)
@@ -140,7 +140,7 @@ public struct NativeEngine {
         try Task.checkCancellation()
         if tool == .cropImage {
             let crop = try pixelRect(options.crop, width: image.width, height: image.height)
-            guard let cropped = image.cropping(to: crop) else { throw TangerineError.invalid("The crop does not overlap the image.") }
+            guard let cropped = image.cropping(to: crop) else { throw TurnstoneError.invalid("The crop does not overlap the image.") }
             image = cropped
         } else if tool == .editImage {
             image = try adjusted(image, options: rendering, pixelScale: scale)
@@ -182,17 +182,17 @@ public struct NativeEngine {
             quality *= 0.72
         } while true
         if tool == .compress {
-            guard try size(output) < size(file) else { throw TangerineError.failed("This image cannot be made smaller with these settings. The original is preserved.") }
-            if let target, try size(output) > target { throw TangerineError.failed("The image cannot reach the requested size with these settings.") }
+            guard try size(output) < size(file) else { throw TurnstoneError.failed("This image cannot be made smaller with these settings. The original is preserved.") }
+            if let target, try size(output) > target { throw TurnstoneError.failed("The image cannot reach the requested size with these settings.") }
         }
         return try context.publish(output, beside: file, extension: outputExtension, suffix: tool.title)
     }
 
     private func compressionTarget(_ file: URL, options: EditOptions) throws -> Int? {
-        guard options.reduction.isFinite, (0...100).contains(options.reduction), options.quality.isFinite, (0...1).contains(options.quality) else { throw TangerineError.invalid("Choose a valid compression quality and reduction percentage.") }
+        guard options.reduction.isFinite, (0...100).contains(options.reduction), options.quality.isFinite, (0...1).contains(options.quality) else { throw TurnstoneError.invalid("Choose a valid compression quality and reduction percentage.") }
         let sourceSize = try size(file)
         let target = options.targetBytes ?? (options.reduction > 0 ? Int(Double(sourceSize) * (1 - options.reduction / 100)) : nil)
-        if let target, target <= 0 { throw TangerineError.invalid("Choose a compression target greater than zero bytes.") }
+        if let target, target <= 0 { throw TurnstoneError.invalid("Choose a compression target greater than zero bytes.") }
         return target
     }
 
@@ -201,15 +201,15 @@ public struct NativeEngine {
     }
 
     private func pixelRect(_ unit: UnitRect, width: Int, height: Int) throws -> CGRect {
-        guard [unit.x, unit.y, unit.width, unit.height].allSatisfy({ $0.isFinite }), unit.width > 0, unit.height > 0 else { throw TangerineError.invalid("Choose a valid crop rectangle.") }
+        guard [unit.x, unit.y, unit.width, unit.height].allSatisfy({ $0.isFinite }), unit.width > 0, unit.height > 0 else { throw TurnstoneError.invalid("Choose a valid crop rectangle.") }
         let rect = CGRect(x: unit.x * Double(width), y: unit.y * Double(height), width: unit.width * Double(width), height: unit.height * Double(height)).intersection(CGRect(x: 0, y: 0, width: width, height: height)).integral
-        guard !rect.isEmpty, !rect.isNull else { throw TangerineError.invalid("The rectangle falls outside the image.") }
+        guard !rect.isEmpty, !rect.isNull else { throw TurnstoneError.invalid("The rectangle falls outside the image.") }
         return rect
     }
 
     private func canvas(width: Int, height: Int) throws -> CGContext {
         guard width > 0, height > 0, width <= 32768, height <= 32768, width * height <= 180_000_000,
-              let context = CGContext(data: nil, width: width, height: height, bitsPerComponent: 8, bytesPerRow: 0, space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { throw TangerineError.invalid("The requested image dimensions are too large or invalid.") }
+              let context = CGContext(data: nil, width: width, height: height, bitsPerComponent: 8, bytesPerRow: 0, space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { throw TurnstoneError.invalid("The requested image dimensions are too large or invalid.") }
         context.interpolationQuality = .high
         return context
     }
@@ -221,7 +221,7 @@ public struct NativeEngine {
     }
 
     private func finish(_ context: CGContext) throws -> CGImage {
-        guard let image = context.makeImage() else { throw TangerineError.failed("Could not render the image.") }
+        guard let image = context.makeImage() else { throw TurnstoneError.failed("Could not render the image.") }
         return image
     }
 
@@ -243,7 +243,7 @@ public struct NativeEngine {
             let grain = noise.cropped(to: ci.extent).applyingFilter("CIColorControls", parameters: [kCIInputSaturationKey: 0]).applyingFilter("CIColorMatrix", parameters: ["inputAVector": CIVector(x: 0, y: 0, z: 0, w: min(1, p.grain) * 0.15)])
             ci = grain.composited(over: ci)
         }
-        guard let result = CIContext().createCGImage(ci, from: CGRect(x: 0, y: 0, width: image.width, height: image.height)) else { throw TangerineError.failed("Could not apply the photo adjustments.") }
+        guard let result = CIContext().createCGImage(ci, from: CGRect(x: 0, y: 0, width: image.width, height: image.height)) else { throw TurnstoneError.failed("Could not apply the photo adjustments.") }
         return result
     }
 
@@ -280,7 +280,7 @@ public struct NativeEngine {
                 case "ellipse", "circle": context.strokeEllipse(in: rect)
                 case "pen", "line", "arrow":
                     let points = try annotation.points.map { point -> CGPoint in
-                        guard point.x.isFinite, point.y.isFinite else { throw TangerineError.invalid("Annotation points must be finite.") }
+                        guard point.x.isFinite, point.y.isFinite else { throw TurnstoneError.invalid("Annotation points must be finite.") }
                         return CGPoint(x: point.x * Double(image.width), y: (1 - point.y) * Double(image.height))
                     }
                     let start = points.first ?? rect.origin
@@ -313,10 +313,10 @@ public struct NativeEngine {
                     NSGraphicsContext.restoreGraphicsState()
                 case "magnify":
                     let source = CGRect(x: rect.midX - rect.width / 4, y: CGFloat(image.height) - rect.midY - rect.height / 4, width: rect.width / 2, height: rect.height / 2).intersection(bounds)
-                    guard let magnified = image.cropping(to: source) else { throw TangerineError.invalid("Choose a magnifier inside the image.") }
+                    guard let magnified = image.cropping(to: source) else { throw TurnstoneError.invalid("Choose a magnifier inside the image.") }
                     context.saveGState(); context.addEllipse(in: rect); context.clip(); context.draw(magnified, in: rect); context.restoreGState(); context.strokeEllipse(in: rect)
                 case "image":
-                    guard let url = annotation.imageURL else { throw TangerineError.invalid("Choose an image to stamp.") }
+                    guard let url = annotation.imageURL else { throw TurnstoneError.invalid("Choose an image to stamp.") }
                     context.draw(try loadImage(url, maximumDimension: maximumDimension), in: rect)
                 case "highlight": context.setAlpha(0.35); context.fill(rect); context.setAlpha(1)
                 default: context.stroke(rect)
@@ -353,7 +353,7 @@ public struct NativeEngine {
 
     private func collage(_ files: [URL], options: EditOptions, maximumDimension: Int? = nil) throws -> CGImage {
         try Task.checkCancellation()
-        guard !files.isEmpty else { throw TangerineError.invalid("Select images for the collage.") }
+        guard !files.isEmpty else { throw TurnstoneError.invalid("Select images for the collage.") }
         let featured = options.collageStyle == "featured" && files.count > 1
         let columns: Int
         switch options.collageStyle {
@@ -402,20 +402,20 @@ public struct NativeEngine {
         for file in files {
             try context.checkCancellation()
             let image = try loadImage(file)
-            guard let page = PDFPage(image: NSImage(cgImage: image, size: NSSize(width: image.width, height: image.height))) else { throw TangerineError.failed("Could not add \(file.lastPathComponent) to the PDF.") }
+            guard let page = PDFPage(image: NSImage(cgImage: image, size: NSSize(width: image.width, height: image.height))) else { throw TurnstoneError.failed("Could not add \(file.lastPathComponent) to the PDF.") }
             document.insert(page, at: document.pageCount)
         }
         return try publishPDF(document, source: source, suffix: nil, context: context)
     }
 
     private func readPDF(_ file: URL) throws -> PDFDocument {
-        guard let document = PDFDocument(url: file), !document.isLocked, document.pageCount > 0 else { throw TangerineError.invalid("Could not open \(file.lastPathComponent). Check that the PDF is valid and unlocked.") }
+        guard let document = PDFDocument(url: file), !document.isLocked, document.pageCount > 0 else { throw TurnstoneError.invalid("Could not open \(file.lastPathComponent). Check that the PDF is valid and unlocked.") }
         return document
     }
 
     private func publishPDF(_ document: PDFDocument, source: URL, suffix: String?, context: ExecutionContext) throws -> URL {
         let output = context.temporaryURL(extension: "pdf")
-        guard document.write(to: output) else { throw TangerineError.failed("Could not write the PDF.") }
+        guard document.write(to: output) else { throw TurnstoneError.failed("Could not write the PDF.") }
         return try context.publish(output, beside: source, extension: "pdf", suffix: suffix)
     }
 
@@ -439,7 +439,7 @@ public struct NativeEngine {
                 let groups: [[Int]]
                 if !request.options.ranges.isEmpty {
                     groups = try request.options.ranges.map { range in
-                        guard range.start.isFinite, range.end.isFinite, range.start >= 1, range.end >= range.start, range.end <= Double(document.pageCount) else { throw TangerineError.invalid("Choose valid PDF page ranges.") }
+                        guard range.start.isFinite, range.end.isFinite, range.start >= 1, range.end >= range.start, range.end <= Double(document.pageCount) else { throw TurnstoneError.invalid("Choose valid PDF page ranges.") }
                         return Array((Int(range.start) - 1)...(Int(range.end) - 1))
                     }
                 } else { groups = (0..<document.pageCount).map { [$0] } }
@@ -450,7 +450,7 @@ public struct NativeEngine {
                     let part = PDFDocument()
                     for pageIndex in group { if let page = document.page(at: pageIndex)?.copy() as? PDFPage { part.insert(page, at: part.pageCount) } }
                     let output = folder.appendingPathComponent(String(format: "Part %03d.pdf", index + 1))
-                    guard part.write(to: output) else { throw TangerineError.failed("Could not write a split PDF part.") }
+                    guard part.write(to: output) else { throw TurnstoneError.failed("Could not write a split PDF part.") }
                 }
                 return [try context.publish(folder, beside: file, extension: "", suffix: "Split PDF")]
             }
@@ -466,13 +466,13 @@ public struct NativeEngine {
                 let organized = PDFDocument()
                 let edits = request.options.pdfPages.isEmpty ? (0..<document.pageCount).map { PDFPageEdit(index: $0) } : request.options.pdfPages
                 let targetWidth = try edits.map { edit -> CGFloat in
-                    guard (0..<document.pageCount).contains(edit.index), let page = document.page(at: edit.index) else { throw TangerineError.invalid("Choose valid PDF pages.") }
+                    guard (0..<document.pageCount).contains(edit.index), let page = document.page(at: edit.index) else { throw TurnstoneError.invalid("Choose valid PDF pages.") }
                     let bounds = page.bounds(for: .mediaBox)
                     return (page.rotation + edit.rotation) % 180 == 0 ? bounds.width : bounds.height
                 }.min() ?? 612
                 for edit in edits {
                     guard (0..<document.pageCount).contains(edit.index), edit.rotation % 90 == 0,
-                          let page = document.page(at: edit.index)?.copy() as? PDFPage else { throw TangerineError.invalid("Choose valid PDF pages and quarter-turn rotations.") }
+                          let page = document.page(at: edit.index)?.copy() as? PDFPage else { throw TurnstoneError.invalid("Choose valid PDF pages and quarter-turn rotations.") }
                     page.rotation = (page.rotation + edit.rotation) % 360
                     if request.options.matchPageWidth {
                         let size = Self.renderedPDFSize(page)
@@ -499,17 +499,17 @@ public struct NativeEngine {
                             "ImageCompression": "ImageJPEGCompress",
                             "ImageScaleSettings": ["ImageResolution": resolution, "ImageScaleInterpolate": true, "ImageSizeMax": request.options.maxDimension ?? 2400, "ImageSizeMin": 0]
                         ]]],
-                        "FilterType": 1, "Name": "Open Tangerine Compression"
+                        "FilterType": 1, "Name": "Turnstone Compression"
                     ]
-                    guard let filter = QuartzFilter(properties: settings) else { throw TangerineError.failed("Could not prepare PDF image compression.") }
+                    guard let filter = QuartzFilter(properties: settings) else { throw TurnstoneError.failed("Could not prepare PDF image compression.") }
                     let temporary = context.temporaryURL(extension: "pdf")
-                    guard document.write(to: temporary, withOptions: [PDFDocumentWriteOption(rawValue: "QuartzFilter"): filter]) else { throw TangerineError.failed("Could not optimize this PDF.") }
+                    guard document.write(to: temporary, withOptions: [PDFDocumentWriteOption(rawValue: "QuartzFilter"): filter]) else { throw TurnstoneError.failed("Could not optimize this PDF.") }
                     let bytes = try size(temporary)
                     if bytes < bestSize { best = temporary; bestSize = bytes }
                     if let target { if bestSize <= target { break } } else { break }
                 }
-                guard let best else { throw TangerineError.failed("This PDF cannot be made smaller with these settings. The original is preserved.") }
-                if let target, bestSize > target { throw TangerineError.failed("The PDF cannot reach the requested size with these settings.") }
+                guard let best else { throw TurnstoneError.failed("This PDF cannot be made smaller with these settings. The original is preserved.") }
+                if let target, bestSize > target { throw TurnstoneError.failed("The PDF cannot reach the requested size with these settings.") }
                 return [try context.publish(best, beside: file, extension: "pdf", suffix: "Compressed")]
             }
             return [try publishPDF(document, source: file, suffix: tool.title, context: context)]
@@ -518,12 +518,12 @@ public struct NativeEngine {
 
     private func scaledPDFPage(_ page: PDFPage, scale: CGFloat) throws -> PDFPage {
         let data = NSMutableData()
-        guard let consumer = CGDataConsumer(data: data) else { throw TangerineError.failed("Could not prepare the PDF page.") }
+        guard let consumer = CGDataConsumer(data: data) else { throw TurnstoneError.failed("Could not prepare the PDF page.") }
         let source = Self.renderedPDFSize(page)
         var bounds = CGRect(x: 0, y: 0, width: source.width * scale, height: source.height * scale)
-        guard let context = CGContext(consumer: consumer, mediaBox: &bounds, nil) else { throw TangerineError.failed("Could not resize the PDF page.") }
+        guard let context = CGContext(consumer: consumer, mediaBox: &bounds, nil) else { throw TurnstoneError.failed("Could not resize the PDF page.") }
         context.beginPDFPage(nil); context.scaleBy(x: scale, y: scale); page.draw(with: .mediaBox, to: context); context.endPDFPage(); context.closePDF()
-        guard let result = PDFDocument(data: data as Data)?.page(at: 0) else { throw TangerineError.failed("Could not resize the PDF page.") }
+        guard let result = PDFDocument(data: data as Data)?.page(at: 0) else { throw TurnstoneError.failed("Could not resize the PDF page.") }
         return result
     }
 
@@ -544,7 +544,7 @@ public struct NativeEngine {
         var singleOutput: URL?
         for index in 0..<document.pageCount {
             try context.checkCancellation()
-            guard let page = document.page(at: index) else { throw TangerineError.failed("Could not read a PDF page.") }
+            guard let page = document.page(at: index) else { throw TurnstoneError.failed("Could not read a PDF page.") }
             let image = try Self.renderPDFPage(page, scale: CGFloat(300) / 72)
             if let folder {
                 let output = folder.appendingPathComponent(String(format: "Page %03d.%@", index + 1, target))
@@ -605,17 +605,17 @@ public struct NativeEngine {
     }
 
     private func metadata(_ file: URL, options: EditOptions, context: ExecutionContext) async throws -> URL {
-        guard let exiftool = ProcessRunner.locate("exiftool") else { throw TangerineError.missingDependency("ExifTool") }
+        guard let exiftool = ProcessRunner.locate("exiftool") else { throw TurnstoneError.missingDependency("ExifTool") }
         let ext = Catalog.fileExtension(file)
         let output = context.temporaryURL(extension: ext)
         try FileManager.default.copyItem(at: file, to: output)
         var arguments = ["-overwrite_original"]
         if options.removeAllMetadata { arguments.append("-all=") }
         for key in options.metadata.keys.sorted() {
-            guard !key.isEmpty, key.allSatisfy({ $0.isLetter || $0.isNumber || $0 == ":" || $0 == "_" || $0 == "-" }), !key.hasPrefix("-") else { throw TangerineError.invalid("Invalid metadata field name.") }
+            guard !key.isEmpty, key.allSatisfy({ $0.isLetter || $0.isNumber || $0 == ":" || $0 == "_" || $0 == "-" }), !key.hasPrefix("-") else { throw TurnstoneError.invalid("Invalid metadata field name.") }
             arguments.append("-\(key)=\(options.metadata[key] ?? "")")
         }
-        guard arguments.count > 1 else { throw TangerineError.invalid("Choose metadata fields to edit or remove.") }
+        guard arguments.count > 1 else { throw TurnstoneError.invalid("Choose metadata fields to edit or remove.") }
         arguments.append(output.path)
         _ = try await context.runner.run(exiftool, arguments: arguments)
         return try context.publish(output, beside: file, extension: ext, suffix: "Metadata")
@@ -631,13 +631,13 @@ public struct NativeEngine {
             let lines = block.components(separatedBy: "\n")
             guard let timestampIndex = lines.firstIndex(where: { $0.contains("-->") }) else { continue }
             let line = lines[timestampIndex]
-            guard let match = regex.firstMatch(in: line, range: NSRange(line.startIndex..., in: line)), timestampIndex + 1 < lines.count else { throw TangerineError.invalid("The subtitle contains an invalid cue.") }
+            guard let match = regex.firstMatch(in: line, range: NSRange(line.startIndex..., in: line)), timestampIndex + 1 < lines.count else { throw TurnstoneError.invalid("The subtitle contains an invalid cue.") }
             func field(_ index: Int) -> String { Range(match.range(at: index), in: line).map { String(line[$0]) } ?? "00" }
             let separator = target == "srt" ? "," : "."
             let timing = "\(field(1)):\(field(2)):\(field(3))\(separator)\(field(4)) --> \(field(5)):\(field(6)):\(field(7))\(separator)\(field(8))"
             cues.append((timing, lines[(timestampIndex + 1)...].joined(separator: "\n").trimmingCharacters(in: .newlines)))
         }
-        guard !cues.isEmpty else { throw TangerineError.invalid("No valid subtitle cues were found.") }
+        guard !cues.isEmpty else { throw TurnstoneError.invalid("No valid subtitle cues were found.") }
         let result: String
         if target == "txt" {
             result = cues.map { $0.1.replacingOccurrences(of: #"<[^>]*>"#, with: "", options: .regularExpression) }.joined(separator: "\n") + "\n"
@@ -668,15 +668,15 @@ public struct NativeEngine {
             try FileManager.default.moveItem(at: staged.deletingPathExtension(), to: destination)
             return directory
         }
-        guard !entries.isEmpty, entries.utf8.count < 4_190_000 else { throw TangerineError.invalid("The archive is empty or unsupported.") }
+        guard !entries.isEmpty, entries.utf8.count < 4_190_000 else { throw TurnstoneError.invalid("The archive is empty or unsupported.") }
         for path in entries.split(separator: "\n", omittingEmptySubsequences: true) {
-            guard !path.hasPrefix("/"), !path.hasPrefix("\\"), !path.contains("\\"), !path.split(separator: "/").contains(".."), !path.contains("\0") else { throw TangerineError.invalid("The archive contains an unsafe path.") }
+            guard !path.hasPrefix("/"), !path.hasPrefix("\\"), !path.contains("\\"), !path.split(separator: "/").contains(".."), !path.contains("\0") else { throw TurnstoneError.invalid("The archive contains an unsafe path.") }
         }
         let verbose = try await context.runner.run(tar, arguments: ["-tvf", staged.path])
-        guard verbose.utf8.count < 4_190_000 else { throw TangerineError.invalid("This archive has too many entries to inspect safely.") }
+        guard verbose.utf8.count < 4_190_000 else { throw TurnstoneError.invalid("This archive has too many entries to inspect safely.") }
         // Reject every link and special file before extraction, including hard links.
         for line in verbose.split(separator: "\n", omittingEmptySubsequences: true) {
-            guard let type = line.first, type == "-" || type == "d" else { throw TangerineError.invalid("The archive contains links or special files, which cannot be safely extracted.") }
+            guard let type = line.first, type == "-" || type == "d" else { throw TurnstoneError.invalid("The archive contains links or special files, which cannot be safely extracted.") }
         }
         let output = context.temporaryURL(extension: "")
         try FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
@@ -687,10 +687,10 @@ public struct NativeEngine {
 
     private func validateExtractedDirectory(_ output: URL) throws {
         let rootPath = output.standardizedFileURL.path + "/"
-        guard let enumerator = FileManager.default.enumerator(at: output, includingPropertiesForKeys: [.isSymbolicLinkKey, .isRegularFileKey, .isDirectoryKey]) else { throw TangerineError.failed("Could not inspect the extracted archive.") }
+        guard let enumerator = FileManager.default.enumerator(at: output, includingPropertiesForKeys: [.isSymbolicLinkKey, .isRegularFileKey, .isDirectoryKey]) else { throw TurnstoneError.failed("Could not inspect the extracted archive.") }
         for case let item as URL in enumerator {
             let values = try item.resourceValues(forKeys: [.isSymbolicLinkKey, .isRegularFileKey, .isDirectoryKey])
-            guard values.isSymbolicLink != true, values.isRegularFile == true || values.isDirectory == true, item.resolvingSymlinksInPath().path.hasPrefix(rootPath) else { throw TangerineError.invalid("The archive produced an unsafe entry.") }
+            guard values.isSymbolicLink != true, values.isRegularFile == true || values.isDirectory == true, item.resolvingSymlinksInPath().path.hasPrefix(rootPath) else { throw TurnstoneError.invalid("The archive produced an unsafe entry.") }
         }
     }
 

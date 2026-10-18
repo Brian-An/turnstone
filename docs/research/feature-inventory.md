@@ -13,7 +13,7 @@ The wheel remains open after the modifier is released and waits for the file dro
 The demo's Enter and touch gestures belong to a simulated web playground and do not establish Finder behavior.
 
 The [tools gallery](https://tangerineformac.com/tools) provides published editor screenshots.
-The local research set contains 22 screenshots under `/tmp/open-tangerine-research/`.
+The local research set contains 22 screenshots under `/tmp/turnstone-research/`.
 The screenshots establish visible controls and approximate layout, not undocumented algorithms or failure behavior.
 The [press kit](https://tangerineformac.com/press) supports adjacent output files and the general wheel appearance.
 The [App Store listing](https://apps.apple.com/us/app/tangerine-file-converter/id6813034065) contains older shortcut wording, so the current site takes precedence.

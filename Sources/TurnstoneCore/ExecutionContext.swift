@@ -40,9 +40,9 @@ public final class ProcessRunner: @unchecked Sendable {
     }
 
     private func execute(_ executable: URL, arguments: [String]) throws -> String {
-        let log = FileManager.default.temporaryDirectory.appendingPathComponent("open-tangerine-\(UUID().uuidString).log")
+        let log = FileManager.default.temporaryDirectory.appendingPathComponent("turnstone-\(UUID().uuidString).log")
         guard FileManager.default.createFile(atPath: log.path, contents: nil) else {
-            throw TangerineError.failed("Could not create a conversion log.")
+            throw TurnstoneError.failed("Could not create a conversion log.")
         }
         defer { try? FileManager.default.removeItem(at: log) }
         let handle = try FileHandle(forWritingTo: log)
@@ -77,7 +77,7 @@ public final class ProcessRunner: @unchecked Sendable {
         try input.seek(toOffset: size > 4_194_304 ? size - 4_194_304 : 0)
         let output = String(decoding: try input.readToEnd() ?? Data(), as: UTF8.self)
         guard process.terminationStatus == 0 else {
-            throw TangerineError.failed("\(executable.lastPathComponent) failed (\(process.terminationStatus)). \(output.suffix(1600))")
+            throw TurnstoneError.failed("\(executable.lastPathComponent) failed (\(process.terminationStatus)). \(output.suffix(1600))")
         }
         return output
     }
@@ -90,7 +90,7 @@ public final class ExecutionContext: @unchecked Sendable {
 
     public init(progress: @escaping @Sendable (String) -> Void = { _ in }) throws {
         self.progress = progress
-        temporaryDirectory = FileManager.default.temporaryDirectory.appendingPathComponent("OpenTangerine-\(UUID().uuidString)", isDirectory: true)
+        temporaryDirectory = FileManager.default.temporaryDirectory.appendingPathComponent("Turnstone-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: temporaryDirectory, withIntermediateDirectories: true)
     }
 
@@ -111,7 +111,7 @@ public final class ExecutionContext: @unchecked Sendable {
         try checkCancellation()
         guard !ext.contains("/"), !ext.contains("\\"), !(suffix ?? "").contains("/"),
               FileManager.default.fileExists(atPath: temporary.path) else {
-            throw TangerineError.invalid("The conversion did not produce a valid output.")
+            throw TurnstoneError.invalid("The conversion did not produce a valid output.")
         }
         var base = source.deletingPathExtension().lastPathComponent
         if source.lastPathComponent.lowercased().hasSuffix(".tar.gz") { base = String(source.lastPathComponent.dropLast(7)) }
@@ -129,6 +129,6 @@ public final class ExecutionContext: @unchecked Sendable {
                 throw error
             }
         }
-        throw TangerineError.failed("Could not choose an unused output filename.")
+        throw TurnstoneError.failed("Could not choose an unused output filename.")
     }
 }

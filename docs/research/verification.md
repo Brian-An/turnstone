@@ -6,7 +6,7 @@ Verified locally on 2026-10-18 on an Apple silicon Mac.
 
 `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test` passed all 61 XCTest cases with zero failures.
 The test build and release build produced no source warnings.
-`scripts/build-app.sh` produced an ad-hoc signed application in `dist/Open Tangerine.app`.
+`scripts/build-app.sh` produced an ad-hoc signed application in `dist/Turnstone.app`.
 `codesign --verify --deep --strict` accepted the application.
 
 Tests exercise the 275-route catalog, compatible batches, file validation, safe output naming, process errors, literal command arguments, cancellation, and move collision checks.
@@ -61,6 +61,19 @@ Updated welcome and wheel screenshots show the system accent theme.
 A separate reviewer found no actionable issues in the color change.
 This appearance-only change was checked with a release build and native UI inspection; the conversion suite was not rerun.
 Changing the system accent preference during runtime was not exercised.
+
+## Turnstone branding verification
+
+Renamed the application, menus, login label, executable, Swift package, library, tests, and documentation to Turnstone.
+The shared original vector stone mark renders in the welcome screen, wheel preview, About view, menu bar template, and generated app icon.
+The app retains its stable bundle identity to preserve preferences and macOS permissions.
+The renamed release build and all 61 XCTest cases pass without source warnings.
+Strict code-signature verification and Info.plist validation succeed.
+Extracting the packaged ICNS confirms exact 16, 32, 64, 128, 256, 512, and 1024 pixel representations.
+The 16 and 256 pixel artwork was visually inspected.
+Native UI inspection confirms the Turnstone app and menu names, welcome screen, About view, and a completed PNG-to-JPEG conversion through the keyboard wheel.
+Updated welcome screenshots and icon exports record the new identity.
+A separate reviewer checked rename completeness, shared vector rendering, packaging, and regression scope.
 
 ## Remaining verification and fidelity limits
 

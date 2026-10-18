@@ -1,7 +1,7 @@
 import XCTest
 import AppKit
 import PDFKit
-@testable import TangerineCore
+@testable import TurnstoneCore
 
 final class DocumentEngineTests: XCTestCase {
     private var directory: URL!

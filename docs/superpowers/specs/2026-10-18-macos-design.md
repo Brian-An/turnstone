@@ -1,8 +1,8 @@
-# Open Tangerine macOS design
+# Turnstone macOS design
 
 Build an independently implemented, open source, offline macOS file utility with Tangerine's contextual conversion wheel and editing workflow.
 Brian requested feature parity and directed implementation to start without further design questions.
-The working title is Open Tangerine; original code, bundled art, sounds, and branding are excluded.
+The working title is Turnstone; original code, bundled art, sounds, and branding are excluded.
 
 ## Product behavior
 

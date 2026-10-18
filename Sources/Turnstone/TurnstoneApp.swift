@@ -1,16 +1,16 @@
 import SwiftUI
 import AppKit
-import TangerineCore
+import TurnstoneCore
 
 @main
-struct OpenTangerineApp: App {
+struct TurnstoneApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var delegate
     var body: some Scene {
         Settings { SettingsView() }
             .commands {
                 CommandGroup(replacing: .newItem) {
                     Button("Choose Files…") { AppModel.shared.chooseFiles() }.keyboardShortcut("o")
-                    Button("Open Tangerine") { AppModel.shared.showHome() }
+                    Button("Turnstone") { AppModel.shared.showHome() }
                 }
                 CommandMenu("Tools") {
                     Button("Recent Jobs") { AppModel.shared.showJobs() }.keyboardShortcut("j")
@@ -28,12 +28,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
         item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
-        item.button?.image = NSImage(systemSymbolName: "arrow.trianglehead.2.clockwise.rotate.90", accessibilityDescription: "Open Tangerine") ?? NSImage(systemSymbolName: "arrow.triangle.2.circlepath", accessibilityDescription: "Open Tangerine")
-        item.button?.image?.isTemplate = true
+        item.button?.image = TurnstoneMark.image(size: 18)
         let menu = NSMenu()
         menu.delegate = self
         for (title, action, key) in [
-            ("Open Tangerine", #selector(home), ""),
+            ("Turnstone", #selector(home), ""),
             ("Choose Files…", #selector(choose), "o"),
             ("Floating Shelf", #selector(shelf), ""),
             ("Recent Jobs", #selector(jobs), "j"),
@@ -47,7 +46,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let pause = NSMenuItem(title: "Pause Drag Detection", action: #selector(togglePause), keyEquivalent: "")
         pause.tag = 10; pause.target = self; menu.addItem(pause)
         menu.addItem(.separator())
-        let quit = NSMenuItem(title: "Quit Open Tangerine", action: #selector(quit), keyEquivalent: "q")
+        let quit = NSMenuItem(title: "Quit Turnstone", action: #selector(quit), keyEquivalent: "q")
         quit.target = self; menu.addItem(quit)
         item.menu = menu
         model.wheel.start()

@@ -1,6 +1,6 @@
 import AppKit
 import SwiftUI
-import TangerineCore
+import TurnstoneCore
 
 enum WheelMode: String, CaseIterable {
     case conversions, tools, actions

@@ -2,15 +2,15 @@
 import PackageDescription
 
 let package = Package(
-    name: "OpenTangerine",
+    name: "Turnstone",
     platforms: [.macOS(.v13)],
     products: [
-        .library(name: "TangerineCore", targets: ["TangerineCore"]),
-        .executable(name: "OpenTangerine", targets: ["OpenTangerine"])
+        .library(name: "TurnstoneCore", targets: ["TurnstoneCore"]),
+        .executable(name: "Turnstone", targets: ["Turnstone"])
     ],
     targets: [
-        .target(name: "TangerineCore"),
-        .executableTarget(name: "OpenTangerine", dependencies: ["TangerineCore"]),
-        .testTarget(name: "TangerineCoreTests", dependencies: ["TangerineCore"])
+        .target(name: "TurnstoneCore"),
+        .executableTarget(name: "Turnstone", dependencies: ["TurnstoneCore"]),
+        .testTarget(name: "TurnstoneCoreTests", dependencies: ["TurnstoneCore"])
     ]
 )

@@ -1,7 +1,7 @@
 import Foundation
 import AppKit
 import XCTest
-@testable import TangerineCore
+@testable import TurnstoneCore
 
 final class MediaEngineTests: XCTestCase {
     private var directory: URL!
@@ -268,7 +268,7 @@ final class MediaEngineTests: XCTestCase {
             let compressed = try await apply(source, .tool(.compress))[0]
             XCTAssertLessThan(try Data(contentsOf: compressed).count, originalSize)
         } catch {
-            XCTAssertTrue(error is TangerineError)
+            XCTAssertTrue(error is TurnstoneError)
             XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath: directory.path).count, 2)
         }
         XCTAssertEqual(try Data(contentsOf: source).count, originalSize)

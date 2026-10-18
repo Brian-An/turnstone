@@ -1,6 +1,6 @@
 import XCTest
 import AppKit
-@testable import TangerineCore
+@testable import TurnstoneCore
 
 final class ConversionEngineTests: XCTestCase {
     private var directory: URL!

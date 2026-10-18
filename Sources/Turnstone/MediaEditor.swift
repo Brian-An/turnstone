@@ -3,7 +3,7 @@ import Combine
 import AVKit
 import AppKit
 import UniformTypeIdentifiers
-import TangerineCore
+import TurnstoneCore
 
 @MainActor
 struct MediaEditor: View {
@@ -290,7 +290,7 @@ private final class MediaPreview: ObservableObject {
             duration = info.duration; width = info.width; height = info.height
             var url = source
             if !(try await AVURLAsset(url: source).load(.isPlayable)) {
-                guard let ffmpeg = ProcessRunner.locate("ffmpeg") else { throw TangerineError.missingDependency("ffmpeg") }
+                guard let ffmpeg = ProcessRunner.locate("ffmpeg") else { throw TurnstoneError.missingDependency("ffmpeg") }
                 url = context.temporaryURL(extension: width > 0 ? "mp4" : "m4a")
                 _ = try await context.runner.run(ffmpeg, arguments: ["-nostdin", "-hide_banner", "-loglevel", "error", "-y", "-i", source.path] + (width > 0 ? ["-c:v", "libx264", "-pix_fmt", "yuv420p", "-c:a", "aac"] : ["-vn", "-c:a", "aac"]) + [url.path])
             }
@@ -328,7 +328,7 @@ private final class MediaPreview: ObservableObject {
             // A temporary symlink keeps generated preview outputs inside the preview workspace.
             let staged = context.temporaryURL(extension: source.pathExtension)
             try FileManager.default.createSymbolicLink(at: staged, withDestinationURL: source)
-            guard let output = try await MediaEngine().perform(JobRequest(files: [staged], operation: .tool(tool), options: options), context: context)?.first else { throw TangerineError.unsupported("This preview is unavailable.") }
+            guard let output = try await MediaEngine().perform(JobRequest(files: [staged], operation: .tool(tool), options: options), context: context)?.first else { throw TurnstoneError.unsupported("This preview is unavailable.") }
             player.replaceCurrentItem(with: AVPlayerItem(url: output)); player.play()
         } catch is CancellationError {} catch { self.error = error.localizedDescription }
     }

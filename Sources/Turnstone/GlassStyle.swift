@@ -33,3 +33,10 @@ struct WindowSurface<Content: View>: View {
     let content: Content
     var body: some View { content.background(WindowBackdrop().ignoresSafeArea()).tint(Color.accentColor) }
 }
+
+struct TurnstoneLogo: View {
+    var body: some View {
+        Image(nsImage: TurnstoneMark.image(size: 64))
+            .renderingMode(.template).resizable().scaledToFit().accessibilityHidden(true)
+    }
+}
