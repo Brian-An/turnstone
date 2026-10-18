@@ -1,0 +1,12 @@
+.build/
+.swiftpm/
+.DS_Store
+dist/
+.superpowers/
+/docs/
+.agents/
+.claude/
+.codex/
+/AGENTS.md
+/CLAUDE.md
+/GEMINI.md
