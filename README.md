@@ -3,12 +3,15 @@
 A native, open source, offline file utility for macOS, inspired by [Tangerine](https://tangerineformac.com/).
 Drag a file, tap a modifier, and drop onto a contextual wheel.
 The implementation uses original Swift code and macOS system artwork.
+The minimal interface uses native Liquid Glass on macOS 26 and later, with translucent material and standard controls on older Macs.
 
+![Native conversion wheel](assets/wheel.jpg)
 
 ## Run
 
-Requires macOS 13 or later and the Swift toolchain.
-Full Xcode is recommended for building and running the XCTest suite.
+Build with Xcode 26 or later and its macOS SDK.
+The resulting app runs on macOS 13 or later.
+Use full Xcode to run the XCTest suite.
 
 ```sh
 ./scripts/build-app.sh
