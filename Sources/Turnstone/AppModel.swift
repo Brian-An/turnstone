@@ -1,6 +1,6 @@
 import SwiftUI
 import AppKit
-import TangerineCore
+import TurnstoneCore
 
 @MainActor
 final class AppModel: ObservableObject {
@@ -10,9 +10,9 @@ final class AppModel: ObservableObject {
     @Published var shelfFiles: [URL] = []
     lazy var wheel = WheelController(model: self)
 
-    func showHome() { Windows.show("home", title: "Open Tangerine", size: NSSize(width: 480, height: 520), content: HomeView(model: self)) }
+    func showHome() { Windows.show("home", title: "Turnstone", size: NSSize(width: 480, height: 520), content: HomeView(model: self)) }
     func showJobs() { Windows.show("jobs", title: "Conversion Jobs", size: NSSize(width: 600, height: 480), content: JobsView(model: self)) }
-    func showSettings() { Windows.show("settings", title: "Open Tangerine Settings", size: NSSize(width: 620, height: 560), content: SettingsView()) }
+    func showSettings() { Windows.show("settings", title: "Turnstone Settings", size: NSSize(width: 620, height: 560), content: SettingsView()) }
     func showShelf() {
         Windows.show("shelf", title: "Floating Shelf", size: NSSize(width: 340, height: 420), floating: true, content: ShelfView(model: self))
         Windows.pinShelf(to: UserDefaults.standard.string(forKey: "shelfEdge") ?? "free")
@@ -72,7 +72,7 @@ final class AppModel: ObservableObject {
                 shelfFiles = Array(Set(shelfFiles + files)).sorted { $0.lastPathComponent.localizedStandardCompare($1.lastPathComponent) == .orderedAscending }
                 showShelf()
             case .airDrop:
-                guard let service = NSSharingService(named: .sendViaAirDrop) else { throw TangerineError.failed("AirDrop is unavailable on this Mac.") }
+                guard let service = NSSharingService(named: .sendViaAirDrop) else { throw TurnstoneError.failed("AirDrop is unavailable on this Mac.") }
                 service.perform(withItems: files)
             case .move:
                 let picker = NSOpenPanel()
@@ -95,7 +95,7 @@ final class AppModel: ObservableObject {
                 })
                 let appName = UserDefaults.standard.string(forKey: "terminalApp") ?? "Terminal"
                 let identifier = appName == "iTerm2" ? "com.googlecode.iterm2" : "com.apple.Terminal"
-                guard let application = NSWorkspace.shared.urlForApplication(withBundleIdentifier: identifier) else { throw TangerineError.invalid("\(appName) is not installed.") }
+                guard let application = NSWorkspace.shared.urlForApplication(withBundleIdentifier: identifier) else { throw TurnstoneError.invalid("\(appName) is not installed.") }
                 for folder in folders {
                     NSWorkspace.shared.open([folder], withApplicationAt: application, configuration: NSWorkspace.OpenConfiguration())
                 }

@@ -184,7 +184,7 @@ public struct JobRequest: Sendable {
     }
 }
 
-public enum TangerineError: LocalizedError {
+public enum TurnstoneError: LocalizedError {
     case invalid(String), missingDependency(String), failed(String), unsupported(String)
     public var errorDescription: String? {
         switch self {

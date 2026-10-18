@@ -1,8 +1,10 @@
-# Open Tangerine
+# Turnstone
+
+<img src="assets/turnstone-icon.png" width="96" alt="Turnstone icon">
 
 A native, open source, offline file utility for macOS, inspired by [Tangerine](https://tangerineformac.com/).
 Drag a file, tap a modifier, and drop onto a contextual wheel.
-The implementation uses original Swift code and macOS system artwork.
+The implementation uses original Swift code, an original stone logo, and macOS system artwork.
 The minimal interface uses native Liquid Glass on macOS 26 and later, with translucent material and standard controls on older Macs.
 Controls and selection highlights follow the Mac’s system accent color, with a blue application icon.
 
@@ -16,11 +18,11 @@ Use full Xcode to run the XCTest suite.
 
 ```sh
 ./scripts/build-app.sh
-open "dist/Open Tangerine.app"
+open "dist/Turnstone.app"
 ```
 
 The application lives in the menu bar.
-Choose **Open Tangerine** from its menu to open the welcome window.
+Choose **Turnstone** from its menu to open the welcome window.
 
 For the extended local format support:
 
@@ -83,6 +85,12 @@ The app is locally ad-hoc signed by the build script.
 Public distribution still requires release packaging, signing, notarization, and review of the licenses of any bundled conversion engines.
 Engines are discovered locally and are not redistributed in this repository.
 
+## Branding
+
+The faceted stone mark is defined once in `Sources/Turnstone/BrandMark.swift` and rendered for the menu bar, interface, and app icon.
+The build script generates every standard icon representation at its exact pixel size.
+The stable bundle identifier preserves existing preferences and macOS permissions across the app rename.
+
 ## Develop and test
 
 ```sh
@@ -99,8 +107,8 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test
 Tests generate real fixtures and check conversion outputs, source preservation, filename collisions, archive safety, process argument handling, cancellation, media duration and channels, redaction pixels, audio bleep frequencies, editable Office exports, and malformed inputs.
 Optional-engine tests skip explicitly when their helper is unavailable.
 
-`TangerineCore` owns format rules, validation, safe output publication, and native/media/document engines.
-`OpenTangerine` owns the menu bar, wheel, file actions, jobs, settings, and native editors.
+`TurnstoneCore` owns format rules, validation, safe output publication, and native/media/document engines.
+`Turnstone` owns the menu bar, wheel, file actions, jobs, settings, and native editors.
 
 ## License
 

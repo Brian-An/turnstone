@@ -69,7 +69,7 @@ struct WheelAppearance: View {
             }
             VStack(spacing: 4) {
                 if let icon { Image(nsImage: icon).resizable().scaledToFit().frame(width: 27, height: 27) }
-                else { Image(systemName: "arrow.triangle.2.circlepath").font(.system(size: 23, weight: .light)).foregroundStyle(Color.accentColor) }
+                else { TurnstoneLogo().frame(width: 28, height: 28).foregroundStyle(Color.accentColor) }
                 Text(centerTitle).font(.system(size: 9, weight: .medium)).lineLimit(1).minimumScaleFactor(0.8)
             }
             .frame(width: 84, height: 84)

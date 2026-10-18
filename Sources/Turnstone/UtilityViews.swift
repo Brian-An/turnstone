@@ -1,7 +1,7 @@
 import SwiftUI
 import AppKit
 import ServiceManagement
-import TangerineCore
+import TurnstoneCore
 
 struct HomeView: View {
     @ObservedObject var model: AppModel
@@ -9,8 +9,8 @@ struct HomeView: View {
     var body: some View {
         VStack(spacing: 0) {
             HStack(spacing: 10) {
-                Image(systemName: "arrow.triangle.2.circlepath").font(.system(size: 17, weight: .medium)).foregroundStyle(Color.accentColor)
-                Text("Open Tangerine").font(.system(size: 16, weight: .medium))
+                TurnstoneLogo().frame(width: 22, height: 22).foregroundStyle(Color.accentColor)
+                Text("Turnstone").font(.system(size: 16, weight: .medium))
                 Spacer()
                 Button { model.showSettings() } label: { Image(systemName: "gearshape").frame(width: 18, height: 18) }.glassAction().help("Settings")
             }.padding(.horizontal, 24).padding(.top, 16).padding(.bottom, 8)
@@ -170,7 +170,7 @@ struct SettingsView: View {
                 Section("Workflow") {
                     Toggle("Reveal finished files in Finder", isOn: $reveal)
                     Toggle("Play a sound when a wheel item is selected", isOn: $sound)
-                    Toggle("Start Open Tangerine at login", isOn: $login).onChange(of: login) { enabled in
+                    Toggle("Start Turnstone at login", isOn: $login).onChange(of: login) { enabled in
                         do { if enabled { try SMAppService.mainApp.register() } else { try SMAppService.mainApp.unregister() } }
                         catch { self.error = error.localizedDescription; login = SMAppService.mainApp.status == .enabled }
                     }
@@ -203,8 +203,8 @@ struct SettingsView: View {
                 Spacer(minLength: 0)
             }.padding(24).frame(maxWidth: .infinity, alignment: .leading) }.id(refresh).tabItem { Label("Engines", systemImage: "puzzlepiece.extension") }
             VStack(spacing: 16) {
-                Image(systemName: "arrow.triangle.2.circlepath.circle.fill").font(.system(size: 60)).foregroundStyle(Color.accentColor)
-                Text("Open Tangerine").font(.title.bold())
+                TurnstoneLogo().frame(width: 64, height: 64).foregroundStyle(Color.accentColor)
+                Text("Turnstone").font(.title.bold())
                 Text("An open source file utility for macOS.").foregroundStyle(.secondary)
                 Text("Independent implementation inspired by Tangerine.\nConversions run locally. Originals stay intact.").multilineTextAlignment(.center).font(.callout).foregroundStyle(.secondary)
                 Link("Reference product", destination: URL(string: "https://tangerineformac.com/")!)

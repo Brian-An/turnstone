@@ -1,6 +1,6 @@
 import XCTest
 import AppKit
-@testable import TangerineCore
+@testable import TurnstoneCore
 
 final class CatalogTests: XCTestCase {
     func testEveryPublicConversionRouteAndInputOnlyFormat() {

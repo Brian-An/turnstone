@@ -48,13 +48,13 @@ public struct DocumentEngine {
                     _ = try await context.runner.run(pandoc, arguments: ["--sandbox", readableSource.path, "--from", input == "epub" ? "epub" : pandocFormat(input), "--to", "docx", "--output", interim.path])
                     attributed = try read(interim)
                 } else if input == "md" { attributed = plain(try String(contentsOf: source, encoding: .utf8)) }
-                else { throw TangerineError.missingDependency("Pandoc") }
+                else { throw TurnstoneError.missingDependency("Pandoc") }
             } else { attributed = try read(readableSource) }
             let output = context.temporaryURL(extension: target == "pages" ? "docx" : target)
             switch target {
             case "txt": try attributed.string.write(to: output, atomically: true, encoding: .utf8)
             case "md", "html", "epub":
-                guard let pandoc = ProcessRunner.locate("pandoc") else { throw TangerineError.missingDependency("Pandoc") }
+                guard let pandoc = ProcessRunner.locate("pandoc") else { throw TurnstoneError.missingDependency("Pandoc") }
                 let interim = context.temporaryURL(extension: "docx")
                 try write(attributed, to: interim, type: .officeOpenXML)
                 _ = try await context.runner.run(pandoc, arguments: ["--sandbox", interim.path, "--from", "docx", "--to", pandocFormat(target), "--standalone", "--metadata", "title=\(source.deletingPathExtension().lastPathComponent)", "--output", output.path])
@@ -70,7 +70,7 @@ public struct DocumentEngine {
                     outputs += try renderPDF(pdf, beside: source, format: target, context: context)
                     continue
                 }
-            default: throw TangerineError.unsupported("This document conversion is unavailable.")
+            default: throw TurnstoneError.unsupported("This document conversion is unavailable.")
             }
             if target == "pages" {
                 let pages = context.temporaryURL(extension: "pages")
@@ -95,23 +95,23 @@ public struct DocumentEngine {
         if ext == "textClipping" {
             let plist = try PropertyListSerialization.propertyList(from: Data(contentsOf: url), format: nil)
             guard let dictionary = plist as? [String: NSObject], let values = dictionary["UTI-Data"] as? [String: NSObject] else {
-                throw TangerineError.unsupported("This text clipping has no readable text representation.")
+                throw TurnstoneError.unsupported("This text clipping has no readable text representation.")
             }
             for key in ["public.utf8-plain-text", "NSStringPboardType"] {
                 if let text = values[key] as? String { return plain(text) }
                 if let data = values[key] as? Data, let text = String(data: data, encoding: .utf8) { return plain(text) }
             }
             if let data = values["public.rtf"] as? Data { return try NSAttributedString(data: data, options: [.documentType: NSAttributedString.DocumentType.rtf], documentAttributes: nil) }
-            throw TangerineError.unsupported("This text clipping has no supported text representation.")
+            throw TurnstoneError.unsupported("This text clipping has no supported text representation.")
         }
         let type: NSAttributedString.DocumentType
         switch ext {
         case "docx":
-            guard try Data(contentsOf: url).prefix(2) == Data([0x50, 0x4b]) else { throw TangerineError.invalid("The Word document is not a valid DOCX archive.") }
+            guard try Data(contentsOf: url).prefix(2) == Data([0x50, 0x4b]) else { throw TurnstoneError.invalid("The Word document is not a valid DOCX archive.") }
             type = .officeOpenXML
         case "rtf": type = .rtf
         case "rtfd": type = .rtfd
-        default: throw TangerineError.unsupported("Cannot read \(ext.uppercased()) as a text document.")
+        default: throw TurnstoneError.unsupported("Cannot read \(ext.uppercased()) as a text document.")
         }
         return try NSAttributedString(url: url, options: [.documentType: type], documentAttributes: nil)
     }
@@ -128,7 +128,7 @@ public struct DocumentEngine {
         storage.addLayoutManager(layout)
         let page = CGRect(x: 0, y: 0, width: 612, height: 792)
         guard let consumer = CGDataConsumer(url: url as CFURL), let pdf = CGContext(consumer: consumer, mediaBox: nil, nil) else {
-            throw TangerineError.failed("Could not create the PDF document.")
+            throw TurnstoneError.failed("Could not create the PDF document.")
         }
         var drawn = 0
         repeat {
@@ -152,31 +152,31 @@ public struct DocumentEngine {
             drawn = NSMaxRange(range)
         } while drawn < layout.numberOfGlyphs
         pdf.closePDF()
-        guard drawn > 0 else { throw TangerineError.failed("The document contains no renderable content.") }
+        guard drawn > 0 else { throw TurnstoneError.failed("The document contains no renderable content.") }
     }
 
     private func renderPDF(_ url: URL, beside source: URL, format: String, context: ExecutionContext) throws -> [URL] {
-        guard let pdf = PDFDocument(url: url), pdf.pageCount > 0 else { throw TangerineError.invalid("The generated PDF has no readable pages.") }
+        guard let pdf = PDFDocument(url: url), pdf.pageCount > 0 else { throw TurnstoneError.invalid("The generated PDF has no readable pages.") }
         let folder = context.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
         if pdf.pageCount > 1 { try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true) }
         var singlePage: URL?
         for index in 0..<pdf.pageCount {
             try context.checkCancellation()
-            guard let page = pdf.page(at: index) else { throw TangerineError.failed("Could not read page \(index + 1).") }
+            guard let page = pdf.page(at: index) else { throw TurnstoneError.failed("Could not read page \(index + 1).") }
             let image = page.thumbnail(of: CGSize(width: page.bounds(for: .mediaBox).width * 300 / 72, height: page.bounds(for: .mediaBox).height * 300 / 72), for: .mediaBox)
             guard let tiff = image.tiffRepresentation, let bitmap = NSBitmapImageRep(data: tiff),
-                  let data = bitmap.representation(using: format == "jpg" ? .jpeg : .png, properties: [.compressionFactor: 0.9]) else { throw TangerineError.failed("Could not render page \(index + 1).") }
+                  let data = bitmap.representation(using: format == "jpg" ? .jpeg : .png, properties: [.compressionFactor: 0.9]) else { throw TurnstoneError.failed("Could not render page \(index + 1).") }
             let output = pdf.pageCount > 1 ? folder.appendingPathComponent(String(format: "Page %03d.%@", index + 1, format)) : context.temporaryURL(extension: format)
             try data.write(to: output)
             singlePage = output
         }
         if pdf.pageCount > 1 { return [try context.publish(folder, beside: source, extension: "", suffix: format.uppercased() + " Pages")] }
-        guard let output = singlePage else { throw TangerineError.failed("The document contains no renderable pages.") }
+        guard let output = singlePage else { throw TurnstoneError.failed("The document contains no renderable pages.") }
         return [try context.publish(output, beside: source, extension: format)]
     }
 
     private func office(_ source: URL, to target: String, context: ExecutionContext) async throws -> URL {
-        guard let executable = ProcessRunner.locate("soffice") else { throw TangerineError.missingDependency("LibreOffice") }
+        guard let executable = ProcessRunner.locate("soffice") else { throw TurnstoneError.missingDependency("LibreOffice") }
         let directory = context.temporaryURL(extension: "office")
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         let profile = context.temporaryURL(extension: "profile")
@@ -188,13 +188,13 @@ public struct DocumentEngine {
         let log = try await context.runner.run(executable, arguments: args)
         let result = directory.appendingPathComponent(source.deletingPathExtension().lastPathComponent).appendingPathExtension(target)
         guard FileManager.default.fileExists(atPath: result.path), (try result.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0) > 0 else {
-            throw TangerineError.failed("LibreOffice could not convert this document. \(log.suffix(700))")
+            throw TurnstoneError.failed("LibreOffice could not convert this document. \(log.suffix(700))")
         }
         return result
     }
 
     private func savePages(_ source: URL, to output: URL, context: ExecutionContext) async throws {
-        guard NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.apple.iWork.Pages") != nil else { throw TangerineError.missingDependency("Apple Pages") }
+        guard NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.apple.iWork.Pages") != nil else { throw TurnstoneError.missingDependency("Apple Pages") }
         // File paths travel as argv values so document names cannot become AppleScript code.
         let script = """
         on run argv
@@ -217,7 +217,7 @@ public struct DocumentEngine {
         let file = context.temporaryURL(extension: "applescript")
         try script.write(to: file, atomically: true, encoding: .utf8)
         _ = try await context.runner.run(URL(fileURLWithPath: "/usr/bin/osascript"), arguments: [file.path, source.path, output.path])
-        guard FileManager.default.fileExists(atPath: output.path) else { throw TangerineError.failed("Pages did not save the converted document.") }
+        guard FileManager.default.fileExists(atPath: output.path) else { throw TurnstoneError.failed("Pages did not save the converted document.") }
     }
 
     private func xml(_ text: String) -> String {
@@ -251,7 +251,7 @@ public struct DocumentEngine {
             add("xl/worksheets/sheet1.xml", "<worksheet xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\"><sheetData>\(rows)</sheetData></worksheet>")
             add("[Content_Types].xml", "<Types xmlns=\"http://schemas.openxmlformats.org/package/2006/content-types\"><Default Extension=\"rels\" ContentType=\"application/vnd.openxmlformats-package.relationships+xml\"/><Default Extension=\"xml\" ContentType=\"application/xml\"/><Override PartName=\"/xl/workbook.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml\"/><Override PartName=\"/xl/worksheets/sheet1.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml\"/></Types>")
         } else {
-            guard let pdf = PDFDocument(url: url), pdf.pageCount > 0 else { throw TangerineError.invalid("The PDF contains no pages.") }
+            guard let pdf = PDFDocument(url: url), pdf.pageCount > 0 else { throw TurnstoneError.invalid("The PDF contains no pages.") }
             var pageTexts: [String] = []
             for index in 0..<pdf.pageCount {
                 try context.checkCancellation()
@@ -261,7 +261,7 @@ public struct DocumentEngine {
                     let singlePage = PDFDocument()
                     singlePage.insert(page, at: 0)
                     let temporary = context.temporaryURL(extension: "pdf")
-                    guard singlePage.write(to: temporary) else { throw TangerineError.failed("Could not read the scanned PDF page.") }
+                    guard singlePage.write(to: temporary) else { throw TurnstoneError.failed("Could not read the scanned PDF page.") }
                     pageTexts.append(try await NativeEngine.pdfText(at: temporary))
                 }
             }
@@ -284,7 +284,7 @@ public struct DocumentEngine {
     }
 
     private func fixedEPUB(_ url: URL, to output: URL, context: ExecutionContext) throws {
-        guard let pdf = PDFDocument(url: url), pdf.pageCount > 0 else { throw TangerineError.invalid("The PDF contains no pages.") }
+        guard let pdf = PDFDocument(url: url), pdf.pageCount > 0 else { throw TurnstoneError.invalid("The PDF contains no pages.") }
         var files: [String: Data] = ["mimetype": Data("application/epub+zip".utf8)]
         files["META-INF/container.xml"] = Data("<?xml version=\"1.0\"?><container version=\"1.0\" xmlns=\"urn:oasis:names:tc:opendocument:xmlns:container\"><rootfiles><rootfile full-path=\"EPUB/book.opf\" media-type=\"application/oebps-package+xml\"/></rootfiles></container>".utf8)
         var manifest = "<item id=\"nav\" href=\"nav.xhtml\" media-type=\"application/xhtml+xml\" properties=\"nav\"/>", spine = "", navigation = ""
@@ -293,7 +293,7 @@ public struct DocumentEngine {
             guard let page = pdf.page(at: index) else { continue }
             let size = page.bounds(for: .mediaBox).size
             let image = page.thumbnail(of: CGSize(width: size.width * 2, height: size.height * 2), for: .mediaBox)
-            guard let tiff = image.tiffRepresentation, let bitmap = NSBitmapImageRep(data: tiff), let data = bitmap.representation(using: .png, properties: [:]) else { throw TangerineError.failed("Could not render an EPUB page.") }
+            guard let tiff = image.tiffRepresentation, let bitmap = NSBitmapImageRep(data: tiff), let data = bitmap.representation(using: .png, properties: [:]) else { throw TurnstoneError.failed("Could not render an EPUB page.") }
             files["EPUB/page\(index).png"] = data
             let pageHTML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><html xmlns=\"http://www.w3.org/1999/xhtml\"><head><title>Page \(index + 1)</title><meta name=\"viewport\" content=\"width=\(Int(size.width)),height=\(Int(size.height))\"/></head><body style=\"margin:0\"><img src=\"page\(index).png\" alt=\"Page \(index + 1)\" style=\"width:100%;height:100%\"/></body></html>"
             files["EPUB/page\(index).xhtml"] = Data(pageHTML.utf8)
@@ -314,9 +314,9 @@ public struct DocumentEngine {
         func word(_ value: UInt16) -> Data { var little = value.littleEndian; return withUnsafeBytes(of: &little) { Data($0) } }
         func dword(_ value: UInt32) -> Data { var little = value.littleEndian; return withUnsafeBytes(of: &little) { Data($0) } }
         let names = (files["mimetype"] == nil ? [] : ["mimetype"]) + files.keys.filter { $0 != "mimetype" }.sorted()
-        guard names.count < Int(UInt16.max) else { throw TangerineError.invalid("The document has too many archive entries.") }
+        guard names.count < Int(UInt16.max) else { throw TurnstoneError.invalid("The document has too many archive entries.") }
         for name in names {
-            guard let contents = files[name], contents.count < Int(UInt32.max), bytes.count < Int(UInt32.max) else { throw TangerineError.invalid("The document exceeds ZIP size limits.") }
+            guard let contents = files[name], contents.count < Int(UInt32.max), bytes.count < Int(UInt32.max) else { throw TurnstoneError.invalid("The document exceeds ZIP size limits.") }
             let nameData = Data(name.utf8), size = UInt32(contents.count), offset = UInt32(bytes.count)
             var crc: UInt32 = 0xffffffff
             for byte in contents { crc ^= UInt32(byte); for _ in 0..<8 { crc = (crc >> 1) ^ (crc & 1 == 1 ? 0xedb88320 : 0) } }
@@ -324,7 +324,7 @@ public struct DocumentEngine {
             for part in [dword(0x04034b50), word(20), word(0x0800), word(0), word(0), word(0), dword(crc), dword(size), dword(size), word(UInt16(nameData.count)), word(0), nameData, contents] { bytes.append(part) }
             for part in [dword(0x02014b50), word(20), word(20), word(0x0800), word(0), word(0), word(0), dword(crc), dword(size), dword(size), word(UInt16(nameData.count)), word(0), word(0), word(0), word(0), dword(0), dword(offset), nameData] { central.append(part) }
         }
-        guard bytes.count < Int(UInt32.max), central.count < Int(UInt32.max) else { throw TangerineError.invalid("The document exceeds ZIP size limits.") }
+        guard bytes.count < Int(UInt32.max), central.count < Int(UInt32.max) else { throw TurnstoneError.invalid("The document exceeds ZIP size limits.") }
         let offset = UInt32(bytes.count)
         bytes += central
         for part in [dword(0x06054b50), word(0), word(0), word(UInt16(names.count)), word(UInt16(names.count)), dword(UInt32(central.count)), dword(offset), word(0)] { bytes.append(part) }

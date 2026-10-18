@@ -1,6 +1,6 @@
 import SwiftUI
 import AppKit
-import TangerineCore
+import TurnstoneCore
 
 struct PhotoCanvas: View {
     let image: NSImage

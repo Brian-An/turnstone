@@ -1,6 +1,6 @@
 import SwiftUI
 import PDFKit
-import TangerineCore
+import TurnstoneCore
 
 struct PDFOrganizer: View {
     let file: URL

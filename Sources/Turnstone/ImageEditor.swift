@@ -1,6 +1,6 @@
 import SwiftUI
 import AppKit
-import TangerineCore
+import TurnstoneCore
 
 struct ImageEditor: View {
     @ObservedObject var editor: ImageEditorModel
