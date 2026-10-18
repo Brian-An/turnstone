@@ -10,7 +10,7 @@ final class AppModel: ObservableObject {
     @Published var shelfFiles: [URL] = []
     lazy var wheel = WheelController(model: self)
 
-    func showHome() { Windows.show("home", title: "Open Tangerine", size: NSSize(width: 640, height: 650), content: HomeView(model: self)) }
+    func showHome() { Windows.show("home", title: "Open Tangerine", size: NSSize(width: 480, height: 520), content: HomeView(model: self)) }
     func showJobs() { Windows.show("jobs", title: "Conversion Jobs", size: NSSize(width: 600, height: 480), content: JobsView(model: self)) }
     func showSettings() { Windows.show("settings", title: "Open Tangerine Settings", size: NSSize(width: 620, height: 560), content: SettingsView()) }
     func showShelf() {

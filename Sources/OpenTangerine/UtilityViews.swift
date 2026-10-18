@@ -9,31 +9,28 @@ struct HomeView: View {
     var body: some View {
         VStack(spacing: 0) {
             HStack(spacing: 10) {
-                Image(systemName: "arrow.triangle.2.circlepath.circle.fill").font(.system(size: 30)).foregroundStyle(.orange)
-                Text("Open Tangerine").font(.title3.weight(.semibold))
+                Image(systemName: "arrow.triangle.2.circlepath").font(.system(size: 17, weight: .medium)).foregroundStyle(.orange)
+                Text("Open Tangerine").font(.system(size: 16, weight: .medium))
                 Spacer()
-                Button { model.showSettings() } label: { Image(systemName: "gearshape") }.buttonStyle(.borderless).help("Settings")
-            }.padding(24)
+                Button { model.showSettings() } label: { Image(systemName: "gearshape").frame(width: 18, height: 18) }.glassAction().help("Settings")
+            }.padding(.horizontal, 24).padding(.top, 16).padding(.bottom, 8)
             ScrollView {
-                VStack(spacing: 14) {
-                    Text("Your files. A little more fluid.").font(.system(size: 30, weight: .bold, design: .rounded)).multilineTextAlignment(.center)
-                    Text("Local conversions and useful tools, right where you drag.").foregroundStyle(.secondary)
-                    WheelPreview().frame(width: 328, height: 354).scaleEffect(0.72).frame(width: 236, height: 255).accessibilityHidden(true)
-                    Text("Drag a file in Finder, tap a key, then drop onto the wheel.\nYou can release the key while you choose.")
-                        .multilineTextAlignment(.center).font(.callout).foregroundStyle(.secondary).lineSpacing(4)
-                    Button("Choose Files…") { model.chooseFiles() }.buttonStyle(.borderedProminent).controlSize(.large).keyboardShortcut("o")
+                VStack(spacing: 18) {
+                    WheelPreview().frame(width: 328, height: 354).scaleEffect(0.68).frame(width: 223, height: 241).accessibilityHidden(true)
+                    Text("Drag a file. Tap a key. Choose a format.")
+                        .multilineTextAlignment(.center).font(.callout).foregroundStyle(.secondary)
+                    Button("Choose Files…") { model.chooseFiles() }.glassAction(prominent: true).controlSize(.large).keyboardShortcut("o")
                     Text(targeted ? "Drop to choose an operation" : "Or drop files anywhere in this window")
                         .font(.caption).foregroundStyle(targeted ? .orange : .secondary)
-                }.padding(.horizontal, 24).padding(.bottom, 20)
+                }.frame(maxWidth: .infinity).padding(.horizontal, 24).padding(.bottom, 20)
             }
-            Divider()
             HStack {
-                Label("Processed on your Mac", systemImage: "lock.shield").font(.caption).foregroundStyle(.secondary)
+                Label("On your Mac", systemImage: "lock").font(.caption).foregroundStyle(.tertiary)
                 Spacer()
                 Button("Recent Jobs") { model.showJobs() }.buttonStyle(.link)
             }.padding(16)
         }
-        .background(targeted ? Color.orange.opacity(0.06) : Color(nsColor: .windowBackgroundColor))
+        .background(targeted ? Color.orange.opacity(0.06) : Color.clear)
         .dropDestination(for: URL.self) { urls, _ in model.wheel.show(files: urls, mode: .conversions, keyboard: true); return !urls.isEmpty } isTargeted: { targeted = $0 }
     }
 }
@@ -53,9 +50,9 @@ struct JobsView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack {
-                Text("Recent jobs").font(.title2.weight(.bold))
+                Text("Recent jobs").font(.system(size: 20, weight: .medium))
                 Spacer()
-                Button("Choose Files…") { model.chooseFiles() }
+                Button("Choose Files…") { model.chooseFiles() }.glassAction()
             }.padding(20)
             if model.jobs.isEmpty {
                 Spacer()
@@ -107,7 +104,7 @@ private struct JobRow: View {
                     }
                 }.font(.caption)
             }
-        }.padding(16).background(.background, in: RoundedRectangle(cornerRadius: 14)).overlay(RoundedRectangle(cornerRadius: 14).stroke(.quaternary))
+        }.padding(.vertical, 16).padding(.horizontal, 4).overlay(alignment: .bottom) { Divider().opacity(0.45) }
     }
 }
 
@@ -142,7 +139,8 @@ struct ShelfView: View {
                                 Text(url.lastPathComponent).lineLimit(2).truncationMode(.middle)
                                 Spacer()
                                 Button { model.shelfFiles.removeAll { $0 == url } } label: { Image(systemName: "xmark") }.buttonStyle(.borderless).help("Remove from shelf")
-                            }.padding(10).background(.quaternary.opacity(0.4), in: RoundedRectangle(cornerRadius: 10))
+                            }.padding(.vertical, 10)
+                                .contentShape(Rectangle())
                                 .onDrag { NSItemProvider(object: url as NSURL) }
                         }
                     }
@@ -185,7 +183,7 @@ struct SettingsView: View {
                     Text("Tap the modifier during a file drag. The wheel stays open after you release it.").font(.caption).foregroundStyle(.secondary)
                 }
                 if let error { Text(error).font(.caption).foregroundStyle(.red) }
-            }.formStyle(.grouped).tabItem { Label("General", systemImage: "gearshape") }
+            }.formStyle(.grouped).scrollContentBackground(.hidden).tabItem { Label("General", systemImage: "gearshape") }
             ScrollView { VStack(alignment: .leading, spacing: 14) {
                 Text("Conversion engines").font(.title3.weight(.semibold))
                 Text("Basic image, PDF, subtitle, and archive tools run with macOS. These local engines add more formats.").font(.callout).foregroundStyle(.secondary)
@@ -211,7 +209,7 @@ struct SettingsView: View {
                 Text("Independent implementation inspired by Tangerine.\nConversions run locally. Originals stay intact.").multilineTextAlignment(.center).font(.callout).foregroundStyle(.secondary)
                 Link("Reference product", destination: URL(string: "https://tangerineformac.com/")!)
             }.frame(maxWidth: .infinity, maxHeight: .infinity).tabItem { Label("About", systemImage: "info.circle") }
-        }.padding(12).frame(minWidth: 540, idealWidth: 600, minHeight: 470, idealHeight: 540)
+        }.padding(12).frame(minWidth: 540, idealWidth: 600, minHeight: 470, idealHeight: 540).background(WindowBackdrop().ignoresSafeArea())
     }
 
     private func keyPicker(_ title: String, key: String, fallback: String) -> some View {

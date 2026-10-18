@@ -36,6 +36,20 @@ Preview work is coalesced to one bounded-resolution render while exports retain 
 Batch moves preflight collisions before relocating any original.
 Multipage image exports and split PDFs publish a complete folder after successful staging.
 
+## Liquid Glass interface verification
+
+The interface uses native SwiftUI Liquid Glass on macOS 26 and later and retains the macOS 13 deployment target with availability-gated material and button fallbacks.
+The compact welcome screen, glass conversion and tool wheels, keyboard selection, image editor Save Copy, recent jobs, settings, and empty floating shelf were inspected through the running native app on macOS 26.6.2.
+The updated welcome screen fits its default window without scrolling.
+A PNG-to-JPEG conversion and a separate exposure-adjusted PNG export both completed through the native interface.
+The full 61-test conversion suite passed after the restyle.
+Updated screenshots record the actual app, using generated fixture artwork.
+
+A separate code review identified a translucent selection fill in the Reduce Transparency branch.
+Every petal in that branch has an opaque system background beneath its selection tint, and the reviewer approved the fix.
+The shelf row retains a rectangular drag target across its empty space.
+Older-macOS material fallbacks, dark appearance, and accessibility appearance settings were checked in code but were not exercised on separate runtime configurations.
+
 ## Remaining verification and fidelity limits
 
 The global Finder drag-and-modifier gesture remains unverified end to end.

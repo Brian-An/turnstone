@@ -1,4 +1,5 @@
 import AppKit
+import SwiftUI
 import TangerineCore
 
 enum WheelMode: String, CaseIterable {
@@ -128,16 +129,19 @@ final class WheelPanel: NSPanel {
 
 @MainActor
 final class WheelCanvas: NSView {
-    var files: [URL] = []
-    var mode: WheelMode = .conversions
-    var entries: [WheelEntry] = [] { didSet { updateAccessibility() } }
+    var files: [URL] = [] { didSet { fileIcon = files.first.map { NSWorkspace.shared.icon(forFile: $0.path) }; refreshSurface() } }
+    var mode: WheelMode = .conversions { didSet { refreshSurface() } }
+    var entries: [WheelEntry] = [] { didSet { updateAccessibility(); refreshSurface() } }
     var keyboardNavigation = false
-    var selected: Int? { didSet { if selected != oldValue { needsDisplay = true; playFeedback() } } }
+    var selected: Int? { didSet { if selected != oldValue { refreshSurface(); playFeedback() } } }
     var onSelect: ((WheelEntry, [URL]) -> Void)?
     var onCancel: (() -> Void)?
     var onMode: ((WheelMode) -> Void)?
     private let center = NSPoint(x: 164, y: 181)
+    private var surface: WheelHostingView?
+    private var fileIcon: NSImage?
     override var acceptsFirstResponder: Bool { true }
+    override var isOpaque: Bool { false }
 
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
@@ -145,6 +149,11 @@ final class WheelCanvas: NSView {
         setAccessibilityElement(true)
         setAccessibilityRole(.group)
         setAccessibilityLabel("File operation wheel. Arrow keys select, Return applies, Escape cancels. Shift, Command, or Control changes wheels.")
+        let hosting = WheelHostingView(rootView: wheelAppearance)
+        hosting.frame = bounds
+        hosting.autoresizingMask = [.width, .height]
+        addSubview(hosting)
+        surface = hosting
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) is unavailable") }
 
@@ -226,41 +235,43 @@ final class WheelCanvas: NSView {
         return true
     }
 
-    override func draw(_ dirtyRect: NSRect) {
-        let dark = effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
-        let circle = NSBezierPath(ovalIn: NSRect(x: center.x - 147, y: center.y - 147, width: 294, height: 294))
-        NSGraphicsContext.saveGraphicsState()
-        let shadow = NSShadow(); shadow.shadowColor = .black.withAlphaComponent(0.18); shadow.shadowBlurRadius = 14; shadow.shadowOffset = NSSize(width: 0, height: -4); shadow.set()
-        (dark ? NSColor(white: 0.18, alpha: 0.92) : NSColor(white: 0.92, alpha: 0.94)).setFill(); circle.fill()
-        NSGraphicsContext.restoreGraphicsState()
-        if entries.isEmpty {
-            drawText(mode == .tools ? "No tools for this selection" : "No common formats", at: NSPoint(x: center.x, y: center.y + 5), size: 13, color: .labelColor, maxWidth: 230)
-            drawText("Control opens file actions", at: NSPoint(x: center.x, y: center.y - 17), size: 11, color: .secondaryLabelColor, maxWidth: 230)
-        } else {
-            for (index, entry) in entries.enumerated() {
-                let angle = 90.0 - Double(index) * 360 / Double(entries.count)
-                let half = 180 / Double(entries.count)
-                let petal = path(start: angle - half, end: angle + half)
-                let active = selected == index
-                (active ? NSColor.systemOrange : dark ? NSColor(white: 0.30, alpha: 0.95) : NSColor(white: 1, alpha: 0.86)).setFill()
-                petal.fill()
-                NSColor(white: dark ? 1 : 0, alpha: 0.07).setStroke(); petal.lineWidth = 1; petal.stroke()
-                let radians = angle * .pi / 180
-                let labelPoint = NSPoint(x: center.x + cos(radians) * 98, y: center.y + sin(radians) * 98)
-                let color: NSColor = active ? .white : .labelColor
-                if let symbol = entry.symbol, let image = NSImage(systemSymbolName: symbol, accessibilityDescription: entry.title) {
-                    image.isTemplate = true
-                    let configuration = NSImage.SymbolConfiguration(pointSize: 17, weight: .medium).applying(.init(paletteColors: [color]))
-                    (image.withSymbolConfiguration(configuration) ?? image).draw(in: NSRect(x: labelPoint.x - 10, y: labelPoint.y + 1, width: 20, height: 20))
-                    drawText(shortTitle(entry), at: NSPoint(x: labelPoint.x, y: labelPoint.y - 10), size: entries.count > 7 ? 8 : 9, color: color, maxWidth: entries.count > 7 ? 65 : 84)
-                } else { drawText(entry.title, at: labelPoint, size: 12, color: color, maxWidth: 72) }
-            }
-            if let file = files.first {
-                NSWorkspace.shared.icon(forFile: file.path).draw(in: NSRect(x: center.x - 18, y: center.y - 9, width: 36, height: 36))
-            }
-            drawText(selected.map { entries[$0].title } ?? (files.count > 1 ? "\(files.count) files" : "Drop on a petal"), at: NSPoint(x: center.x, y: center.y - 25), size: 9, color: .labelColor, maxWidth: 90)
+    private func refreshSurface() { surface?.rootView = wheelAppearance }
+
+    private var wheelAppearance: WheelAppearance {
+        let petals = entries.enumerated().map { index, entry in
+            let angle = 90.0 - Double(index) * 360 / Double(entries.count)
+            let half = 180 / Double(entries.count)
+            let radians = angle * .pi / 180
+            return WheelPetalAppearance(
+                id: index,
+                path: displayPath(path(start: angle - half, end: angle + half)),
+                title: shortTitle(entry),
+                symbol: entry.symbol,
+                position: CGPoint(x: center.x + cos(radians) * 98, y: 354 - center.y - sin(radians) * 98)
+            )
         }
-        drawText("\(WheelMode.conversions.symbol) Formats   \(WheelMode.tools.symbol) Tools   \(WheelMode.actions.symbol) Actions", at: NSPoint(x: center.x, y: 17), size: 11, color: .secondaryLabelColor, maxWidth: 320)
+        let title = selected.flatMap { entries.indices.contains($0) ? entries[$0].title : nil }
+            ?? (files.count > 1 ? "\(files.count) files" : files.isEmpty ? "Convert" : "Choose")
+        return WheelAppearance(petals: petals, selected: selected,
+            center: CGPoint(x: center.x, y: 354 - center.y), icon: fileIcon,
+            centerTitle: title, emptyTitle: mode == .tools ? "No tools for this selection" : "No common formats")
+    }
+
+    private func displayPath(_ bezier: NSBezierPath) -> Path {
+        var result = Path()
+        var points = [NSPoint](repeating: .zero, count: 3)
+        func flipped(_ point: NSPoint) -> CGPoint { CGPoint(x: point.x, y: 354 - point.y) }
+        for index in 0..<bezier.elementCount {
+            switch bezier.element(at: index, associatedPoints: &points) {
+            case .moveTo: result.move(to: flipped(points[0]))
+            case .lineTo: result.addLine(to: flipped(points[0]))
+            case .curveTo, .cubicCurveTo: result.addCurve(to: flipped(points[2]), control1: flipped(points[0]), control2: flipped(points[1]))
+            case .quadraticCurveTo: result.addQuadCurve(to: flipped(points[1]), control: flipped(points[0]))
+            case .closePath: result.closeSubpath()
+            @unknown default: break
+            }
+        }
+        return result
     }
 
     private func shortTitle(_ entry: WheelEntry) -> String {
@@ -304,11 +315,7 @@ final class WheelCanvas: NSView {
         return path
     }
 
-    private func drawText(_ text: String, at point: NSPoint, size: CGFloat, color: NSColor, maxWidth: CGFloat) {
-        let style = NSMutableParagraphStyle(); style.alignment = .center; style.lineBreakMode = .byTruncatingTail
-        let attributes: [NSAttributedString.Key: Any] = [.font: NSFont.systemFont(ofSize: size, weight: .semibold), .foregroundColor: color, .paragraphStyle: style]
-        text.draw(in: NSRect(x: point.x - maxWidth / 2, y: point.y - size * 0.65, width: maxWidth, height: size * 1.6), withAttributes: attributes)
-    }
+
 }
 
 @MainActor

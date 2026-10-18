@@ -19,9 +19,8 @@ struct ImageEditor: View {
             if let image = (original ? editor.original : editor.preview) {
                 VStack(spacing: 8) {
                     HStack {
-                        Text("Preview").font(.caption).foregroundStyle(.secondary)
                         Spacer()
-                        Toggle("Original", isOn: $original).toggleStyle(.button).controlSize(.small)
+                        Toggle("Original", isOn: $original).toggleStyle(.button).glassAction().controlSize(.small)
                     }
                     PhotoCanvas(image: tool == .cropImage ? (editor.original ?? image) : image, tool: tool, options: $editor.options, selected: $selected, kind: kind, annotationColor: annotationColor.value, annotationText: annotationText, stamp: stamp)
                         .frame(height: tool == .collage ? 340 : 360)
@@ -131,8 +130,8 @@ struct ImageEditor: View {
             HStack(spacing: 5) {
                 ForEach([("arrow", "arrow.up.right"), ("line", "line.diagonal"), ("text", "textformat"), ("rectangle", "rectangle"), ("ellipse", "circle"), ("pen", "pencil.tip"), ("highlight", "highlighter"), ("number", "1.circle"), ("magnify", "plus.magnifyingglass"), ("image", "photo.badge.plus")], id: \.0) { name, symbol in
                     Button { kind = name; if name == "image" { chooseImage { stamp = $0 } } } label: {
-                        Image(systemName: symbol).frame(maxWidth: .infinity).frame(height: 30).foregroundStyle(kind == name ? Color.white : Color.primary)
-                    }.buttonStyle(.plain).background(kind == name ? Color.orange : Color.secondary.opacity(0.10), in: RoundedRectangle(cornerRadius: 7)).help(name.capitalized)
+                        Image(systemName: symbol).frame(maxWidth: .infinity).frame(height: 26)
+                    }.glassAction(prominent: kind == name).help(name.capitalized)
                 }
             }
             HStack {

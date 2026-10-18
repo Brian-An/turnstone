@@ -66,23 +66,20 @@ struct ToolEditor: View {
         VStack(spacing: 0) {
             HStack {
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(operation.title).font(.title2.weight(.semibold))
+                    Text(operation.title).font(.system(size: 20, weight: .medium))
                     Text(files.count == 1 ? files[0].lastPathComponent : "\(files.count) files selected").font(.caption).foregroundStyle(.secondary).lineLimit(1).truncationMode(.middle)
                 }
                 Spacer()
                 if editor.loading { ProgressView().controlSize(.small) }
             }.padding(20)
-            Divider()
             ScrollView {
                 content.padding(20).frame(maxWidth: .infinity)
             }
             if let error = editor.error { Text(error).font(.caption).foregroundStyle(.red).frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 20).padding(.bottom, 10) }
-            Divider()
             HStack {
-                Button("Reset") { editor.options = EditOptions(); editor.files = files; resetVersion = UUID() }
+                Button("Reset") { editor.options = EditOptions(); editor.files = files; resetVersion = UUID() }.glassAction()
                 Spacer()
-                Text("Saves a new copy").font(.caption).foregroundStyle(.secondary)
-                Button("Save Copy") { submit(editor.options, editor.files) }.buttonStyle(.borderedProminent).keyboardShortcut(.defaultAction).disabled(!canSave)
+                Button("Save Copy") { submit(editor.options, editor.files) }.glassAction(prominent: true).controlSize(.large).keyboardShortcut(.defaultAction).disabled(!canSave).help("Saves a new copy beside the original")
             }.padding(16)
         }.frame(minWidth: 620, minHeight: 540)
         .onReceive(editor.$options.debounce(for: .milliseconds(140), scheduler: RunLoop.main)) { _ in editor.updatePreview() }
