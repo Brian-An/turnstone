@@ -105,7 +105,7 @@ public struct MediaEngine: Sendable {
         case "opus": return ["-vn", "-c:a", "libopus", "-b:a", "128k"]
         case "aiff": return ["-vn", "-c:a", "pcm_s16be"]
         case "wma": return ["-vn", "-c:a", "wmav2", "-b:a", "192k"]
-        case "webm": return ["-c:v", "libvpx-vp9", "-crf", "32", "-b:v", "0", "-c:a", "libopus"]
+        case "webm": return ["-c:v", "libvpx-vp9", "-crf", "32", "-b:v", "0", "-pix_fmt", "yuv420p", "-c:a", "libopus"]
         case "wmv": return ["-c:v", "wmv2", "-c:a", "wmav2"]
         case "avi": return ["-c:v", "mpeg4", "-q:v", "4", "-c:a", "libmp3lame"]
         case "gif", "png": return []
@@ -258,16 +258,28 @@ public struct MediaEngine: Sendable {
     }
 
     private func metadata(_ source: URL, _ options: EditOptions, _ context: ExecutionContext) async throws -> URL {
-        let staged = context.temporaryURL(extension: source.pathExtension)
-        try FileManager.default.copyItem(at: source, to: staged)
-        var args = ["-overwrite_original"]
-        if options.removeAllMetadata { args += ["-all="] }
-        for (key, value) in options.metadata.sorted(by: { $0.key < $1.key }) {
+        let fields = options.removeAllMetadata ? [:] : options.metadata
+        for key in fields.keys {
             guard key.range(of: "^[A-Za-z][A-Za-z0-9:_-]*$", options: .regularExpression) != nil else { throw TurnstoneError.invalid("Invalid metadata field: \(key)") }
-            args.append("-\(key)=\(value)")
         }
-        guard args.count > 1 else { throw TurnstoneError.invalid("Choose metadata fields to edit or remove.") }
-        _ = try await execute("exiftool", args + [staged.path], context)
+        guard options.removeAllMetadata || !fields.isEmpty else { throw TurnstoneError.invalid("Choose metadata fields to edit or remove.") }
+        let staged = context.temporaryURL(extension: source.pathExtension)
+        if ["m4a", "mp4", "mov", "gif"].contains(source.pathExtension.lowercased()) {
+            try FileManager.default.copyItem(at: source, to: staged)
+            var args = ["-overwrite_original"]
+            if options.removeAllMetadata { args += ["-all="] }
+            for (key, value) in fields.sorted(by: { $0.key < $1.key }) { args.append("-\(key)=\(value)") }
+            _ = try await execute("exiftool", args + [staged.path], context)
+        } else {
+            // FFmpeg remuxes containers that ExifTool can read but cannot write.
+            var args = ["-nostdin", "-hide_banner", "-loglevel", "error", "-y", "-i", source.path, "-map", "0", "-c", "copy"]
+            if options.removeAllMetadata { args += ["-map_metadata", "-1", "-map_metadata:s", "-1"] }
+            for (key, value) in fields.sorted(by: { $0.key < $1.key }) {
+                let field = key.split(separator: ":").last.map(String.init) ?? key
+                args += ["-metadata", "\(field.lowercased())=\(value)"]
+            }
+            _ = try await execute("ffmpeg", args + [staged.path], context)
+        }
         return try context.publish(staged, beside: source, extension: source.pathExtension, suffix: "metadata")
     }
 
