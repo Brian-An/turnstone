@@ -4,7 +4,7 @@ Verified locally on 2026-10-18 on an Apple silicon Mac.
 
 ## Automated verification
 
-`DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test` passed all 63 XCTest cases with zero failures: 61 core cases and two app interaction cases.
+`DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test` passed all 64 XCTest cases with zero failures: 61 core cases and three app interaction cases.
 The test build and release build produced no source warnings.
 `scripts/build-app.sh` produced an ad-hoc signed application in `dist/Turnstone.app`.
 `codesign --verify --deep --strict` accepted the application.
@@ -109,6 +109,18 @@ It retains the selected edge at radius 142 and cancels at radius 150 in all four
 All 63 tests and the release build pass.
 Native wheel inspection confirms a readable light selection tint and compact lower-slice geometry.
 The updated wheel screenshot records this appearance.
+
+## Whole-slice outward movement
+
+The selected slice translates as one piece away from the wheel center, with a uniform two-point displacement and no resizing.
+Its label, glass path, and active drop target share the same outward displacement.
+Deselecting the slice returns it inward to its resting position.
+The light tint, 140 ms ease-out, and reduced-motion behavior remain unchanged.
+The direction regression checks constant slice size and monotonically outward travel at five angles and five intermediate animation states.
+That regression failed against the resizing effect and passes against uniform translation.
+All 64 tests, the release build, and strict code-signature verification pass.
+The native wheel was inspected and its screenshot updated.
+A separate reviewer approved the transformation and hit-target changes.
 
 ## Remaining verification and fidelity limits
 

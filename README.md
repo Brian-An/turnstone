@@ -44,7 +44,7 @@ Writing native `.pages` files additionally requires Apple Pages and its Automati
 4. Drop to apply the operation.
 
 The center, gaps between petals, and space outside the wheel do not select an operation.
-The active slice uses a light accent tint and a brief, subtle lift without bounce or text zoom.
+The active slice uses a light accent tint and a brief, subtle slide away from the wheel center without resizing or bounce.
 Its enlarged edge remains a valid drop target, and Reduce Motion keeps the highlight still.
 Choose Files from the menu or drop files into the welcome window for the keyboard workflow.
 Arrow keys select a petal, Return applies it, and Escape closes the wheel.
