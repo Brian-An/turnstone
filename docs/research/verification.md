@@ -4,7 +4,7 @@ Verified locally on 2026-10-18 on an Apple silicon Mac.
 
 ## Automated verification
 
-`DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test` passed all 61 XCTest cases with zero failures.
+`DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test` passed all 63 XCTest cases with zero failures: 61 core cases and two app interaction cases.
 The test build and release build produced no source warnings.
 `scripts/build-app.sh` produced an ad-hoc signed application in `dist/Turnstone.app`.
 `codesign --verify --deep --strict` accepted the application.
@@ -74,6 +74,27 @@ The 16 and 256 pixel artwork was visually inspected.
 Native UI inspection confirms the Turnstone app and menu names, welcome screen, About view, and a completed PNG-to-JPEG conversion through the keyboard wheel.
 Updated welcome screenshots and icon exports record the new identity.
 A separate reviewer checked rename completeness, shared vector rendering, packaging, and regression scope.
+
+## Quiet conversions and wheel feedback verification
+
+Reproduced automatic Recent Jobs opening and automatic Finder output reveal through a native PNG-to-JPEG conversion before changing the behavior.
+Regression tests initially failed for an automatically opened jobs window and for dropping on the enlarged edge of an active slice.
+The app test target performs a real conversion and confirms that its output and source exist while Recent Jobs stays closed.
+A real WheelCanvas test checks all four cardinal expanded edges, normal neighboring targets, center cancellation, and inactive outer space.
+Both tests pass alongside all 61 core cases.
+
+Conversions retain their jobs and errors for manual inspection without opening windows or Finder automatically.
+The obsolete automatic-reveal preference is removed; manual Recent Jobs and its Finder reveal button remain available.
+A native keyboard conversion produced a separate JPEG while leaving Recent Jobs closed and Finder's window and selection unchanged.
+Opening Recent Jobs manually confirmed the completed outputs.
+
+The selected slice enlarges by eight percent, lifts outward by eight points, and uses a spring transition with a stronger accent tint and outline.
+The glass fill, outline, and extended hit target use the same transformed path.
+The reduced-motion appearance retains color highlighting without spatial movement.
+The native lower-slice preview confirmed aligned glass and outline geometry and clearance above the shortcut strip.
+The release app builds, passes strict code-signature verification, and was approved by a separate reviewer after the native glass correction.
+The updated wheel screenshot records the selected lower slice.
+The full global Finder drag gesture and separate accessibility appearance configurations retain the manual verification limits below.
 
 ## Remaining verification and fidelity limits
 

@@ -11,6 +11,7 @@ let package = Package(
     targets: [
         .target(name: "TurnstoneCore"),
         .executableTarget(name: "Turnstone", dependencies: ["TurnstoneCore"]),
-        .testTarget(name: "TurnstoneCoreTests", dependencies: ["TurnstoneCore"])
+        .testTarget(name: "TurnstoneCoreTests", dependencies: ["TurnstoneCore"]),
+        .testTarget(name: "TurnstoneAppTests", dependencies: ["Turnstone"])
     ]
 )

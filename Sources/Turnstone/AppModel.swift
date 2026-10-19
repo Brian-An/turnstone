@@ -55,7 +55,6 @@ final class AppModel: ObservableObject {
         let job = ConversionJob(request: request)
         jobs.insert(job, at: 0)
         if jobs.count > 50 { jobs = Array(jobs.prefix(50)) + jobs.dropFirst(50).filter { !$0.finished } }
-        showJobs()
         job.start()
     }
 
@@ -157,9 +156,6 @@ final class ConversionJob: ObservableObject, Identifiable {
                 }
                 finished = true
                 message = cancelled ? "Cancelled" : errors.isEmpty ? "Finished" : "Finished with errors"
-                if !outputs.isEmpty && UserDefaults.standard.object(forKey: "revealResults") as? Bool != false {
-                    NSWorkspace.shared.activateFileViewerSelecting(outputs)
-                }
             }
         } catch { errors = [error.localizedDescription]; message = "Couldn’t start"; finished = true }
     }
