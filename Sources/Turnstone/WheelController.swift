@@ -163,10 +163,20 @@ final class WheelCanvas: NSView {
     }
 
     func updateSelection(_ point: NSPoint) {
-        guard let index = WheelGeometry.selection(x: point.x - center.x, y: point.y - center.y, count: entries.count) else { selected = nil; return }
-        let angle = 90.0 - Double(index) * 360 / Double(entries.count)
-        let half = 180 / Double(entries.count)
-        selected = path(start: angle - half, end: angle + half).contains(point) ? index : nil
+        if let index = WheelGeometry.selection(x: point.x - center.x, y: point.y - center.y, count: entries.count) {
+            let angle = 90.0 - Double(index) * 360 / Double(entries.count)
+            let half = 180 / Double(entries.count)
+            if path(start: angle - half, end: angle + half).contains(point) { selected = index; return }
+        }
+        // The active petal keeps its enlarged edge as a drop target without moving its base target.
+        if !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion,
+           let selected, entries.indices.contains(selected) {
+            let appearance = wheelAppearance
+            let petal = appearance.petals[selected]
+            let transform = WheelEmphasis.transform(at: petal.position, from: appearance.center)
+            if petal.path.applying(transform).contains(CGPoint(x: point.x, y: 354 - point.y)) { return }
+        }
+        selected = nil
     }
 
     override func updateTrackingAreas() {

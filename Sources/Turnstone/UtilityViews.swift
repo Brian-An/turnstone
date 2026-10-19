@@ -155,7 +155,6 @@ struct ShelfView: View {
 }
 
 struct SettingsView: View {
-    @AppStorage("revealResults") private var reveal = true
     @AppStorage("wheelSound") private var sound = false
     @AppStorage("terminalApp") private var terminal = "Terminal"
     @AppStorage("conversionKey") private var conversionKey = "shift"
@@ -168,7 +167,6 @@ struct SettingsView: View {
         TabView {
             Form {
                 Section("Workflow") {
-                    Toggle("Reveal finished files in Finder", isOn: $reveal)
                     Toggle("Play a sound when a wheel item is selected", isOn: $sound)
                     Toggle("Start Turnstone at login", isOn: $login).onChange(of: login) { enabled in
                         do { if enabled { try SMAppService.mainApp.register() } else { try SMAppService.mainApp.unregister() } }

@@ -44,12 +44,16 @@ Writing native `.pages` files additionally requires Apple Pages and its Automati
 4. Drop to apply the operation.
 
 The center, gaps between petals, and space outside the wheel do not select an operation.
+The active slice grows and lifts outward with a spring animation and an accent highlight.
+Its enlarged edge remains a valid drop target, and Reduce Motion keeps the highlight still.
 Choose Files from the menu or drop files into the welcome window for the keyboard workflow.
 Arrow keys select a petal, Return applies it, and Escape closes the wheel.
 The modifier shortcuts can be changed in Settings.
 
 Conversions and edits save new copies beside the originals, with numbered names on collisions.
-Jobs support cancellation, per-file errors, and revealing completed outputs in Finder.
+Conversions finish without opening windows or Finder.
+Open **Recent Jobs** from the menu to inspect progress, errors, or completed files, and use its folder button to reveal an output.
+Jobs support cancellation and per-file errors.
 The explicit **Move** action relocates originals after a destination picker and collision checks.
 No file is uploaded for conversion.
 Pages, LibreOffice, and other independently installed applications retain their own behavior and preferences.
@@ -61,7 +65,7 @@ Pages, LibreOffice, and other independently installed applications retain their 
 - All 26 researched tool categories, including photo adjustment, annotation, background styling, crops, collage, metadata, compression, trimming, normalization, channels, bleeping, redaction, splitting, joining, snapshots, audio visualization, and PDF organization.
 - AirDrop, a draggable floating shelf with edge pinning, clipboard file copy, Move, Copy Path, and Terminal or iTerm2.
 - Native previews, editable image regions, waveform and timeline controls, page thumbnails, and batch ordering.
-- Launch at login, custom modifier keys, optional selection sounds, and Finder reveal preferences.
+- Launch at login, custom modifier keys, optional selection sounds, and manual Finder reveal.
 
 Catalog entries describe supported routes; successful conversion also depends on the input and locally available engines.
 
