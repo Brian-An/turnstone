@@ -12,7 +12,7 @@ public struct ConversionEngine {
             let package = Catalog.fileExtension(file) == "rtfd" && values.isDirectory == true
             guard values.isRegularFile == true || package else { throw TurnstoneError.invalid("Choose files rather than folders for conversion or editing.") }
         }
-        try validate(request.options)
+        try validate(request.options, operation: request.operation)
         switch request.operation {
         case .convert(let target):
             guard request.files.allSatisfy({ Catalog.conversions[Catalog.fileExtension($0)]?.contains(target) == true }) else {
@@ -44,7 +44,7 @@ public struct ConversionEngine {
         throw TurnstoneError.unsupported("No local conversion engine supports this operation.")
     }
 
-    private func validate(_ options: EditOptions) throws {
+    private func validate(_ options: EditOptions, operation: FileOperation) throws {
         let photo = options.photo
         let scalars = [options.quality, options.reduction, options.start, options.speed, options.leftVolume, options.rightVolume,
                        options.loudness, options.loudnessRange, options.truePeak, options.padding, options.cornerRadius, options.shadowRadius,
@@ -75,7 +75,12 @@ public struct ConversionEngine {
             guard redaction.start.isFinite, redaction.start >= 0, redaction.end.map({ $0.isFinite && $0 > redaction.start }) != false else { throw TurnstoneError.invalid("Redaction times must be finite and ordered.") }
         }
         for range in options.ranges {
-            guard range.start.isFinite, range.end.isFinite, range.start >= 0, range.end > range.start else { throw TurnstoneError.invalid("Time ranges must be finite, positive, and ordered.") }
+            if case .tool(.splitPDF) = operation {
+                guard range.start.isFinite, range.end.isFinite, range.start >= 1, range.end >= range.start,
+                      range.start.rounded() == range.start, range.end.rounded() == range.end else { throw TurnstoneError.invalid("PDF ranges must use whole, one-based page numbers in order.") }
+            } else {
+                guard range.start.isFinite, range.end.isFinite, range.start >= 0, range.end > range.start else { throw TurnstoneError.invalid("Time ranges must be finite, positive, and ordered.") }
+            }
         }
         guard (options.splitPoints + options.snapshotTimes).allSatisfy({ $0.isFinite && $0 >= 0 }) else { throw TurnstoneError.invalid("Snapshot and split times must be finite and nonnegative.") }
         guard ["reflow", "fixed"].contains(options.epubLayout) else { throw TurnstoneError.invalid("Choose reflow or fixed EPUB layout.") }
