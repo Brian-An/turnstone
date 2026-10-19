@@ -45,7 +45,7 @@ final class AppModel: ObservableObject {
 
     func edit(_ files: [URL], operation: FileOperation) {
         let key = UUID().uuidString
-        Windows.show(key, title: operation.title, size: NSSize(width: 760, height: 790), content: ToolEditor(files: files, operation: operation) { options, orderedFiles in
+        Windows.show(key, title: operation.title, size: EditorLayout.size(for: operation, fileCount: files.count), minimumSize: EditorLayout.minimumSize(for: operation, fileCount: files.count), content: ToolEditor(files: files, operation: operation) { options, orderedFiles in
             self.submit(JobRequest(files: orderedFiles, operation: operation, options: options))
             Windows.close(key)
         })

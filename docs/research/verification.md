@@ -238,6 +238,33 @@ They inspect embedded metadata, preserve the source, and confirm that unchecking
 The AVKit correction was verified by reopening the native editors, generating a waveform preview, and exporting actual video.
 A separate reviewer checked the combined changes and identified the metadata removal precedence defect before final verification.
 
+## Compact editor layout, 2026-10-19
+
+Compared the running editor with the [Tangerine tool windows](https://tangerineformac.com/tools) and reproduced the clipped Background ratio row and permanent scrollbar gutter.
+Editors use sizes chosen for their controls rather than the shared 760 by 790 point window.
+Background opens at 520 by 620 points, compression at 460 by 440, and two-file ordering at 480 by 328.
+Headers, footers, form spacing, image previews, waveforms, and video previews are smaller.
+Image previews remain visible while their controls scroll independently.
+The original-image toggle sits in the compact header, and unused image-preview space uses a neutral material instead of black.
+The blue adjustment sliders and system accent controls retain their appearance.
+
+Editor scroll views use native overlay scrollers that hide automatically and leave no permanent gutter.
+The policy is local to editors and does not change the user's macOS scrollbar preference.
+An AppKit setter trace confirmed that input-device preference notifications can reapply the legacy style after window attachment.
+The editor scroll view keeps its overlay style across those updates, and control content leaves clearance for the narrow thumb.
+Minimum editor sizes preserve room for the controls beneath fixed image previews.
+
+Two new app tests initially failed against the shared window size, clipped Background form, and legacy scroller style.
+They check real hosted windows, default Background content fitting, native overlay/autohide behavior, preference-style updates, and smaller compression, ordering, and EPUB windows.
+Native inspection confirmed all Background controls fit, its gradient and ratio controls still update the preview, and Save Copy exports the result.
+The Edit Image list scrolls through Vignette while retaining its preview and save controls.
+The compact video trim screen retains its time fields, frame strip, transport, selection playback, and comparison controls.
+Additional native checks cover the complete crop form, expanded compression targets and reset, metadata search and keyboard saving, and expanded collage ordering and export.
+The full 119-test suite passes with zero failures or skips: 96 core tests and 23 app tests.
+The release build is warning-free, passes strict code-signature verification, and was launched for the final native comparison-toggle and Background layout checks.
+The [compact Background screenshot](../screenshots/editor-background-compact.jpg) records the rebuilt app with generated test artwork.
+A separate reviewer found no confirmed blockers in the sizing, bindings, preview lifecycle, or native scrolling changes.
+
 ## Remaining verification and fidelity limits
 
 The global Finder drag-and-modifier gesture remains unverified end to end.

@@ -22,10 +22,10 @@ struct MediaEditor: View {
     private var isVideo: Bool { preview.width > 0 }
 
     var body: some View {
-        VStack(spacing: 18) {
+        VStack(spacing: 12) {
             if preview.loading { ProgressView("Preparing preview…").frame(maxWidth: .infinity, minHeight: 160) }
             else if isVideo || tool == .audioVisualizer { videoCanvas }
-            else { waveform.frame(height: 140).background(.quaternary.opacity(0.3), in: RoundedRectangle(cornerRadius: 12)) }
+            else { waveform.frame(height: 100).background(.quaternary.opacity(0.3), in: RoundedRectangle(cornerRadius: 12)) }
             if let error = preview.error { Label(error, systemImage: "exclamationmark.triangle").font(.caption).foregroundStyle(.red).textSelection(.enabled) }
             if !preview.loading {
                 if tool == .trimVideo || tool == .trimAudio {
@@ -80,7 +80,7 @@ struct MediaEditor: View {
             }
             .frame(width: width, height: height).clipShape(RoundedRectangle(cornerRadius: 10))
             .position(x: proxy.size.width / 2, y: proxy.size.height / 2)
-        }.frame(height: 270)
+        }.frame(height: 230)
     }
 
     private func rectangle(_ rect: Binding<UnitRect>, size: CGSize, shaded: Bool) -> some View {
@@ -115,7 +115,7 @@ struct MediaEditor: View {
     private var playback: some View {
         VStack(spacing: 10) {
             Slider(value: Binding(get: { position }, set: { position = $0; preview.seek($0) }), in: 0...duration).accessibilityLabel("Playback position")
-            HStack(spacing: 16) {
+            HStack(spacing: 10) {
                 Button { preview.player.pause(); preview.player.currentItem?.step(byCount: -1) } label: { Image(systemName: "backward.end") }.help("Previous frame")
                 Button { if preview.player.rate == 0 { preview.player.play() } else { preview.player.pause() } } label: { Image(systemName: preview.player.rate == 0 ? "play.fill" : "pause.fill") }.help("Play or pause")
                 Button { preview.player.pause(); preview.player.currentItem?.step(byCount: 1) } label: { Image(systemName: "forward.end") }.help("Next frame")
@@ -124,7 +124,7 @@ struct MediaEditor: View {
                 if tool == .trimAudio || tool == .trimVideo { Button("Play Selected Range") { preview.seek(options.start); preview.player.play() } }
                 Button("Original") { preview.original() }
                 if tool != .videoSnapshots && tool != .splitVideo { Button(preview.rendering ? "Preparing…" : tool == .bleepAudio ? "With Bleeps" : "Preview Changes") { Task { await preview.render(tool, options: options) } }.disabled(preview.rendering) }
-            }.buttonStyle(.borderless)
+            }.buttonStyle(.borderless).font(.callout)
         }
     }
     private var cropControls: some View {

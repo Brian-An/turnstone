@@ -5,7 +5,7 @@ import TurnstoneCore
 struct ImageEditor: View {
     @ObservedObject var editor: ImageEditorModel
     let tool: ToolID
-    @State private var original = false
+    @Binding var original: Bool
     @State private var kind = "arrow"
     @State private var annotationColor = Color.orange
     @State private var annotationText = "Text"
@@ -15,35 +15,35 @@ struct ImageEditor: View {
     @State private var detecting = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 18) {
+        VStack(alignment: .leading, spacing: 12) {
             if let image = (original ? editor.original : editor.preview) {
-                VStack(spacing: 8) {
-                    HStack {
-                        Spacer()
-                        Toggle("Original", isOn: $original).toggleStyle(.button).glassAction().controlSize(.small)
-                    }
-                    PhotoCanvas(image: tool == .cropImage ? (editor.original ?? image) : image, tool: tool, options: $editor.options, selected: $selected, kind: kind, annotationColor: annotationColor.value, annotationText: annotationText, stamp: stamp)
-                        .frame(height: tool == .collage ? 340 : 360)
-                        .background(Color.black.opacity(0.92), in: RoundedRectangle(cornerRadius: 14))
-                        .clipShape(RoundedRectangle(cornerRadius: 14))
-                }
+                PhotoCanvas(image: tool == .cropImage ? (editor.original ?? image) : image, tool: tool, options: $editor.options, selected: $selected, kind: kind, annotationColor: annotationColor.value, annotationText: annotationText, stamp: stamp)
+                    .frame(height: EditorLayout.imagePreviewHeight(for: tool))
+                    .background(.quaternary.opacity(0.35), in: RoundedRectangle(cornerRadius: 10))
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
             } else {
                 Text("This file’s preview could not be loaded.").foregroundStyle(.secondary).frame(height: 120)
             }
-            switch tool {
-            case .editImage: photoControls
-            case .background: backgroundControls
-            case .cropImage: cropControls
-            case .annotateImage: annotationControls
-            case .redactImage: redactionControls
-            case .collage: collageControls
-            default: EmptyView()
+            EditorScrollView {
+                controls.padding(.vertical, 2).frame(maxWidth: .infinity, alignment: .topLeading)
             }
         }
     }
 
+    @ViewBuilder private var controls: some View {
+        switch tool {
+        case .editImage: photoControls
+        case .background: backgroundControls
+        case .cropImage: cropControls
+        case .annotateImage: annotationControls
+        case .redactImage: redactionControls
+        case .collage: collageControls
+        default: EmptyView()
+        }
+    }
+
     private var photoControls: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 8) {
             Text("Light").font(.headline)
             adjustment("Exposure", key: \.exposure, range: -3...3, initial: 0, unit: " EV")
             adjustment("Brightness", key: \.brightness, range: -0.5...0.5, initial: 0)
@@ -79,20 +79,23 @@ struct ImageEditor: View {
     }
 
     private var backgroundControls: some View {
-        VStack(spacing: 16) {
+        VStack(alignment: .leading, spacing: 10) {
             Picker("Background", selection: $editor.options.backgroundStyle) {
                 Text("Solid color").tag("solid"); Text("Gradient").tag("gradient"); Text("Image").tag("image")
             }.pickerStyle(.segmented)
             HStack {
                 ColorPicker("Background color", selection: colorBinding(\EditOptions.background))
                 if editor.options.backgroundStyle == "image" { Button("Choose Image…") { chooseImage { editor.options.backgroundImage = $0 } } }
-            }
+            }.frame(maxWidth: .infinity, alignment: .leading)
             slider("Padding", value: $editor.options.padding, range: 0...500)
             slider("Corners", value: $editor.options.cornerRadius, range: 0...200)
             slider("Shadow", value: $editor.options.shadowRadius, range: 0...100)
-            Picker("Canvas ratio", selection: Binding(get: { editor.options.aspectRatio ?? 0 }, set: { editor.options.aspectRatio = $0 == 0 ? nil : $0 })) {
-                Text("Auto").tag(0.0); Text("1:1").tag(1.0); Text("16:9").tag(16.0 / 9); Text("4:5").tag(0.8)
-            }.pickerStyle(.segmented)
+            HStack {
+                Text("Ratio").frame(width: 76, alignment: .leading)
+                Picker("Canvas ratio", selection: Binding(get: { editor.options.aspectRatio ?? 0 }, set: { editor.options.aspectRatio = $0 == 0 ? nil : $0 })) {
+                    Text("Auto").tag(0.0); Text("1:1").tag(1.0); Text("16:9").tag(16.0 / 9); Text("4:5").tag(0.8)
+                }.pickerStyle(.segmented).labelsHidden()
+            }
         }
     }
 
@@ -164,7 +167,7 @@ struct ImageEditor: View {
     }
 
     private var collageControls: some View {
-        VStack(spacing: 14) {
+        VStack(spacing: 10) {
             Picker("Layout", selection: $editor.options.collageStyle) {
                 Text("Grid").tag("grid"); Text("Row").tag("row"); Text("Column").tag("column"); Text("Featured").tag("featured")
             }
@@ -179,7 +182,7 @@ struct ImageEditor: View {
     }
 
     private func slider(_ title: String, value: Binding<Double>, range: ClosedRange<Double>) -> some View {
-        HStack { Text(title).frame(width: 90, alignment: .leading); Slider(value: value, in: range); Text("\(Int(value.wrappedValue)) px").font(.caption.monospacedDigit()).frame(width: 60) }
+        HStack { Text(title).frame(width: 76, alignment: .leading); Slider(value: value, in: range).accessibilityLabel(title); Text("\(Int(value.wrappedValue)) px").font(.caption.monospacedDigit()).frame(width: 52, alignment: .trailing) }
     }
     private func colorBinding(_ key: WritableKeyPath<EditOptions, ColorValue>) -> Binding<Color> {
         Binding(get: { Color(editor.options[keyPath: key]) }, set: { editor.options[keyPath: key] = $0.value })
