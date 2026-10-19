@@ -36,9 +36,7 @@ struct WheelAppearance: View {
 
     var body: some View {
         ZStack {
-            if #available(macOS 26, *) {
-                GlassEffectContainer(spacing: 0) { face }
-            } else { face }
+            face
             HStack(spacing: 12) {
                 shortcut(WheelMode.conversions, "Convert")
                 shortcut(WheelMode.tools, "Tools")
@@ -49,7 +47,6 @@ struct WheelAppearance: View {
             .fixedSize().position(x: center.x, y: 341)
         }
         .frame(width: 328, height: 354)
-        .animation(reduceMotion ? nil : .easeOut(duration: 0.14), value: selected)
         .allowsHitTesting(false)
         .accessibilityHidden(true)
     }
@@ -68,12 +65,16 @@ struct WheelAppearance: View {
                 ForEach(petals) { petal in
                     let active = selected == petal.id
                     let lifted = active && !reduceMotion
-                    // Animating the path keeps native glass and hit testing aligned.
-                    let shape = PetalShape(path: petal.path, anchor: petal.position, center: center, emphasis: lifted ? 1 : 0)
+                    let bounds = petal.path.boundingRect
+                    let offset = lifted ? WheelEmphasis.offset(at: petal.position, from: center) : .zero
+                    let shape = PetalShape(path: petal.path.offsetBy(dx: -bounds.minX, dy: -bounds.minY), size: bounds.size)
+                    // Independent, fixed glass surfaces prevent neighboring selections from morphing together.
                     Color.clear
-                        .frame(width: 328, height: 354)
+                        .frame(width: bounds.width, height: bounds.height)
                         .modifier(WheelGlass(shape: shape, selected: active))
-                        .zIndex(active ? 1 : 0)
+                        .offset(offset)
+                        .position(x: bounds.midX, y: bounds.midY)
+                        .animation(reduceMotion ? nil : .easeOut(duration: 0.14), value: active)
                 }
             }
             // Keep labels above every glass surface so neighboring petals cannot refract them.
@@ -92,6 +93,7 @@ struct WheelAppearance: View {
                 .frame(width: petals.count > 7 ? 64 : 78)
                 .position(petal.position)
                 .offset(offset)
+                .animation(reduceMotion ? nil : .easeOut(duration: 0.14), value: selected == petal.id)
             }
             VStack(spacing: 4) {
                 if let icon { Image(nsImage: icon).resizable().scaledToFit().frame(width: 27, height: 27) }
@@ -114,15 +116,9 @@ struct WheelAppearance: View {
 
 private struct PetalShape: Shape {
     let path: Path
-    let anchor: CGPoint
-    let center: CGPoint
-    var emphasis: CGFloat
-    var animatableData: CGFloat {
-        get { emphasis }
-        set { emphasis = newValue }
-    }
+    let size: CGSize
     func path(in rect: CGRect) -> Path {
-        path.applying(WheelEmphasis.transform(at: anchor, from: center, amount: emphasis))
+        path.applying(CGAffineTransform(a: rect.width / size.width, b: 0, c: 0, d: rect.height / size.height, tx: rect.minX, ty: rect.minY))
     }
 }
 
