@@ -35,6 +35,24 @@ final class DragInteractionTests: XCTestCase {
     }
 
     @MainActor
+    func testCenterAcceptsValidDragImmediatelyWithoutCommitting() {
+        let (panel, canvas, drag) = makeDestination()
+        defer { panel.close() }
+        var committed = false
+        canvas.onSelect = { _, _ in committed = true }
+        drag.draggingLocation = NSPoint(x: 164, y: 181)
+        XCTAssertEqual(canvas.draggingEntered(drag), .copy, "A valid drag must be accepted on its first entry without dwelling on a slice")
+        XCTAssertNil(canvas.selected)
+        XCTAssertFalse(canvas.prepareForDragOperation(drag), "Dropping in the center still cancels")
+        XCTAssertFalse(canvas.performDragOperation(drag))
+        XCTAssertFalse(committed)
+        drag.draggingLocation = NSPoint(x: 164, y: 281)
+        XCTAssertEqual(canvas.draggingUpdated(drag), .copy)
+        XCTAssertEqual(canvas.selected, 0, "The first movement onto a slice must select it immediately")
+        XCTAssertTrue(canvas.prepareForDragOperation(drag))
+    }
+
+    @MainActor
     func testUnsupportedDragDoesNotHighlightOrAcceptDrop() {
         let (panel, canvas, drag) = makeDestination()
         defer { panel.close() }

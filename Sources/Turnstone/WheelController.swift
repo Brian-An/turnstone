@@ -263,7 +263,8 @@ final class WheelCanvas: NSView {
             dragHint = matchingFiles && !modifiers.isEmpty ? "Release key" : "Can't drop"
         }
         refreshDragSelection()
-        return selected == nil ? [] : .copy
+        // Accept valid drags on entry; preparation requires a selected slice before committing.
+        return dragAllowsCopy ? .copy : []
     }
     func refreshDragSelection() {
         guard let dragPoint else { return }
