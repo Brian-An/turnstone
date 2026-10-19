@@ -43,9 +43,12 @@ Writing native `.pages` files additionally requires Apple Pages and its Automati
 3. Release the key and move onto a wheel petal.
 4. Drop to apply the operation.
 
-The center, gaps between petals, and space outside the wheel do not select an operation.
-The active slice uses a light accent tint and a brief, subtle slide away from the wheel center without resizing or bounce.
-Its enlarged edge remains a valid drop target, and Reduce Motion keeps the highlight still.
+The center and space outside the wheel cancel selection.
+Slice targets include the decorative gaps, with a small overlap that prevents flicker near boundaries.
+The active slice highlights immediately and uses a brief, subtle slide away from the wheel center without resizing or bounce.
+Its outward edge remains a valid drop target, and Reduce Motion keeps the highlight still.
+The wheel confirms copy acceptance before highlighting and remains available until the native drop finishes.
+If holding a shortcut prevents copying, release the key while keeping the file dragged.
 Choose Files from the menu or drop files into the welcome window for the keyboard workflow.
 Arrow keys select a petal, Return applies it, and Escape closes the wheel.
 The modifier shortcuts can be changed in Settings.

@@ -72,6 +72,7 @@ struct WheelAppearance: View {
                     Color.clear
                         .frame(width: bounds.width, height: bounds.height)
                         .modifier(WheelGlass(shape: shape, selected: active))
+                        .animation(nil, value: active)
                         .offset(offset)
                         .position(x: bounds.midX, y: bounds.midY)
                         .animation(reduceMotion ? nil : .easeOut(duration: 0.14), value: active)
@@ -90,6 +91,7 @@ struct WheelAppearance: View {
                         .lineLimit(1).minimumScaleFactor(0.85)
                 }
                 .foregroundStyle(.primary)
+                .animation(nil, value: selected == petal.id)
                 .frame(width: petals.count > 7 ? 64 : 78)
                 .position(petal.position)
                 .offset(offset)

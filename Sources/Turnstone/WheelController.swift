@@ -46,26 +46,29 @@ final class WheelController {
     }
 
     private func pollDrag() {
+        updateDrag(mouseDown: NSEvent.pressedMouseButtons & 1 == 1, location: NSEvent.mouseLocation,
+                   flags: NSEvent.modifierFlags, board: NSPasteboard(name: .drag))
+    }
+
+    func updateDrag(mouseDown down: Bool, location: NSPoint, flags: NSEvent.ModifierFlags, board: NSPasteboard) {
         guard !model.paused else { return }
-        let down = NSEvent.pressedMouseButtons & 1 == 1
-        let board = NSPasteboard(name: .drag)
         if !down {
-            if wasDown, !keyboardMode { hide() }
+            // AppKit owns completion after release while the wheel is the native drag destination.
+            if wasDown, !keyboardMode, view?.isReceivingDrag != true { hide() }
             wasDown = false; idleChange = board.changeCount; lastFlags = []; dragFiles = []; suppressed = false
             return
         }
         if keyboardMode { return }
-        if !wasDown { startPoint = NSEvent.mouseLocation; wasDown = true; lastFlags = [] }
-        guard !suppressed, hypot(NSEvent.mouseLocation.x - startPoint.x, NSEvent.mouseLocation.y - startPoint.y) > 4,
+        if !wasDown { startPoint = location; wasDown = true; lastFlags = [] }
+        guard !suppressed, hypot(location.x - startPoint.x, location.y - startPoint.y) > 4,
               board.changeCount != idleChange else { return }
         if dragFiles.isEmpty { dragFiles = Self.files(from: board) }
         guard !dragFiles.isEmpty else { return }
-        let flags = NSEvent.modifierFlags.intersection([.shift, .command, .control, .option])
+        let flags = flags.intersection([.shift, .command, .control, .option])
         if flags != lastFlags, !flags.isEmpty {
             lastFlags = flags
             if let mode = WheelMode.matching(flags) { show(files: dragFiles, mode: mode, keyboard: false) }
         } else if flags.isEmpty { lastFlags = [] }
-        if let view, let panel { view.updateSelection(panel.convertPoint(fromScreen: NSEvent.mouseLocation)) }
     }
 
     static func files(from board: NSPasteboard) -> [URL] {
@@ -85,9 +88,11 @@ final class WheelController {
             view.onSelect = { [weak self] entry, urls in self?.model.select(entry, files: urls) }
             view.onCancel = { [weak self] in self?.suppressed = true; self?.hide() }
             view.onMode = { [weak self] newMode in self?.switchMode(newMode) }
+            view.onDragEnd = { [weak self] in self?.hide() }
             panel.contentView = view; self.panel = panel; self.view = view
         }
         let newSession = panel?.isVisible != true
+        if newSession { view?.resetDragSession() }
         view?.files = files
         view?.keyboardNavigation = keyboard
         switchMode(mode)
@@ -116,10 +121,11 @@ final class WheelController {
         case .actions: view.entries = FileAction.allCases.map(WheelEntry.action)
         }
         view.selected = keyboardMode && !view.entries.isEmpty ? 0 : nil
+        view.refreshDragSelection()
         view.needsDisplay = true
     }
 
-    func hide() { panel?.orderOut(nil); keyboardMode = false }
+    func hide() { panel?.orderOut(nil); view?.resetDragSession(); keyboardMode = false }
 }
 
 final class WheelPanel: NSPanel {
@@ -140,6 +146,16 @@ final class WheelCanvas: NSView {
     private let center = NSPoint(x: 164, y: 181)
     private var surface: WheelHostingView?
     private var fileIcon: NSImage?
+    private var dragSequence: Int?
+    private var dragPoint: NSPoint?
+    private var dragBoardChange: Int?
+    private var dragURLs: [URL] = []
+    private var dragAllowsCopy = false
+    private var preparedDrop: (sequence: Int, entry: WheelEntry, files: [URL])?
+    private var performedSequence: Int?
+    private var dragHint: String? { didSet { if dragHint != oldValue { refreshSurface() } } }
+    var isReceivingDrag: Bool { dragSequence != nil }
+    var onDragEnd: (() -> Void)?
     override var acceptsFirstResponder: Bool { true }
     override var isOpaque: Bool { false }
 
@@ -163,18 +179,15 @@ final class WheelCanvas: NSView {
     }
 
     func updateSelection(_ point: NSPoint) {
-        if let index = WheelGeometry.selection(x: point.x - center.x, y: point.y - center.y, count: entries.count) {
-            let angle = 90.0 - Double(index) * 360 / Double(entries.count)
-            let half = 180 / Double(entries.count)
-            if path(start: angle - half, end: angle + half).contains(point) { selected = index; return }
+        let x = point.x - center.x, y = point.y - center.y
+        if let index = WheelGeometry.selection(x: x, y: y, count: entries.count, previous: selected) {
+            selected = index
+            return
         }
-        // The active petal keeps its enlarged edge as a drop target without moving its base target.
         if !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion,
-           let selected, entries.indices.contains(selected) {
-            let appearance = wheelAppearance
-            let petal = appearance.petals[selected]
-            let transform = WheelEmphasis.transform(at: petal.position, from: appearance.center)
-            if petal.path.applying(transform).contains(CGPoint(x: point.x, y: 354 - point.y)) { return }
+           let selected,
+           WheelGeometry.selection(x: x, y: y, count: entries.count, outer: 140 + WheelEmphasis.lift, previous: selected) == selected {
+            return
         }
         selected = nil
     }
@@ -186,6 +199,7 @@ final class WheelCanvas: NSView {
     }
 
     override func mouseMoved(with event: NSEvent) {
+        guard !isReceivingDrag else { return }
         if keyboardNavigation, event.deltaX == 0, event.deltaY == 0 { return }
         keyboardNavigation = false
         updateSelection(convert(event.locationInWindow, from: nil))
@@ -194,7 +208,7 @@ final class WheelCanvas: NSView {
         updateSelection(convert(event.locationInWindow, from: nil))
         if let selected { onSelect?(entries[selected], files) }
     }
-    override func mouseExited(with event: NSEvent) { if !keyboardNavigation { selected = nil } }
+    override func mouseExited(with event: NSEvent) { if !isReceivingDrag && !keyboardNavigation { selected = nil } }
     override func keyDown(with event: NSEvent) {
         keyboardNavigation = true
         switch event.keyCode {
@@ -228,24 +242,83 @@ final class WheelCanvas: NSView {
         if let mode = WheelMode.matching(flags) { onMode?(mode) }
     }
 
+    override func wantsPeriodicDraggingUpdates() -> Bool { true }
     override func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation { draggingUpdated(sender) }
     override func draggingUpdated(_ sender: NSDraggingInfo) -> NSDragOperation {
-        updateSelection(convert(sender.draggingLocation, from: nil))
+        guard performedSequence != sender.draggingSequenceNumber else { return [] }
+        if dragSequence != sender.draggingSequenceNumber {
+            resetDragSession()
+            dragSequence = sender.draggingSequenceNumber
+        }
+        if dragBoardChange != sender.draggingPasteboard.changeCount {
+            dragURLs = WheelController.files(from: sender.draggingPasteboard)
+            dragBoardChange = sender.draggingPasteboard.changeCount
+        }
+        dragPoint = convert(sender.draggingLocation, from: nil)
+        let matchingFiles = !dragURLs.isEmpty && dragURLs == files
+        dragAllowsCopy = matchingFiles && sender.draggingSourceOperationMask.contains(.copy)
+        if dragAllowsCopy { dragHint = nil }
+        else {
+            let modifiers = NSEvent.modifierFlags.intersection([.command, .control, .option])
+            dragHint = matchingFiles && !modifiers.isEmpty ? "Release key" : "Can't drop"
+        }
+        refreshDragSelection()
         return selected == nil ? [] : .copy
     }
-    override func draggingExited(_ sender: NSDraggingInfo?) { selected = nil }
-    override func prepareForDragOperation(_ sender: NSDraggingInfo) -> Bool { selected != nil }
-    override func performDragOperation(_ sender: NSDraggingInfo) -> Bool {
-        updateSelection(convert(sender.draggingLocation, from: nil))
-        let urls = WheelController.files(from: sender.draggingPasteboard)
-        guard let selected, !urls.isEmpty else { return false }
-        let entry = entries[selected]
-        // Dispatch after the source finishes its drag session so the original stays in place.
-        DispatchQueue.main.async { [weak self] in self?.onSelect?(entry, urls) }
+    func refreshDragSelection() {
+        guard let dragPoint else { return }
+        keyboardNavigation = false
+        if dragAllowsCopy { updateSelection(dragPoint) }
+        else { selected = nil }
+    }
+    override func draggingExited(_ sender: NSDraggingInfo?) {
+        guard sender == nil || sender?.draggingSequenceNumber == dragSequence else { return }
+        if preparedDrop == nil { resetDragSession() }
+        selected = nil
+    }
+    override func prepareForDragOperation(_ sender: NSDraggingInfo) -> Bool {
+        guard draggingUpdated(sender) == .copy, let selected else { preparedDrop = nil; return false }
+        // Freeze the accepted target before the drag image is removed and callbacks can clear hover.
+        preparedDrop = (sender.draggingSequenceNumber, entries[selected], dragURLs)
         return true
     }
+    override func performDragOperation(_ sender: NSDraggingInfo) -> Bool {
+        guard let drop = preparedDrop, drop.sequence == sender.draggingSequenceNumber,
+              performedSequence != drop.sequence,
+              sender.draggingSourceOperationMask.contains(.copy),
+              WheelController.files(from: sender.draggingPasteboard) == drop.files else { return false }
+        preparedDrop = nil
+        performedSequence = drop.sequence
+        let onSelect = onSelect
+        // Let the source complete its copy session before starting conversion or opening an editor.
+        DispatchQueue.main.async { onSelect?(drop.entry, drop.files) }
+        return true
+    }
+    override func concludeDragOperation(_ sender: NSDraggingInfo?) {
+        if let sender { finishDrag(sender) }
+    }
+    override func draggingEnded(_ sender: NSDraggingInfo) { finishDrag(sender) }
+    private func finishDrag(_ sender: NSDraggingInfo) {
+        guard dragSequence == sender.draggingSequenceNumber else { return }
+        resetDragSession()
+        selected = nil
+        onDragEnd?()
+    }
+    func resetDragSession() {
+        dragSequence = nil
+        dragPoint = nil
+        dragBoardChange = nil
+        dragURLs = []
+        dragAllowsCopy = false
+        preparedDrop = nil
+        dragHint = nil
+    }
 
-    private func refreshSurface() { surface?.rootView = wheelAppearance }
+    private func refreshSurface() {
+        surface?.rootView = wheelAppearance
+        // Resolve hosting updates during AppKit's drag-tracking run loop as well as normal mouse moves.
+        surface?.layoutSubtreeIfNeeded()
+    }
 
     private var wheelAppearance: WheelAppearance {
         let petals = entries.enumerated().map { index, entry in
@@ -260,7 +333,7 @@ final class WheelCanvas: NSView {
                 position: CGPoint(x: center.x + cos(radians) * 98, y: 354 - center.y - sin(radians) * 98)
             )
         }
-        let title = selected.flatMap { entries.indices.contains($0) ? entries[$0].title : nil }
+        let title = dragHint ?? selected.flatMap { entries.indices.contains($0) ? entries[$0].title : nil }
             ?? (files.count > 1 ? "\(files.count) files" : files.isEmpty ? "Convert" : "Choose")
         return WheelAppearance(petals: petals, selected: selected,
             center: CGPoint(x: center.x, y: 354 - center.y), icon: fileIcon,

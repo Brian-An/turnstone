@@ -4,7 +4,7 @@ Verified locally on 2026-10-18 on an Apple silicon Mac.
 
 ## Automated verification
 
-`DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test` passed all 65 XCTest cases with zero failures: 61 core cases and four app interaction cases.
+`DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test` passed all 76 XCTest cases with zero failures: 61 core cases and 15 app interaction cases.
 The test build and release build produced no source warnings.
 `scripts/build-app.sh` produced an ad-hoc signed application in `dist/Turnstone.app`.
 `codesign --verify --deep --strict` accepted the application.
@@ -137,6 +137,36 @@ All 65 tests, the release build, and strict code-signature verification pass.
 A separate reviewer found no blocking issues in the local shape geometry, offset order, or fixed stacking.
 Native inspection confirms aligned glass and labels for right-side, left-side, and PDF selections.
 Pointer entry timing and the full drag gesture retain the automation limits below; native inspection verifies rendered selection endpoints rather than the complete temporal motion.
+
+## Reliable drag lifecycle and immediate highlighting
+
+The discovery timer finds file drags and shortcut changes; native AppKit destination callbacks own hover selection inside the wheel.
+Mouse-move and mouse-exit tracking cannot clear an active native drag's selection.
+Mouse release keeps the destination panel available until AppKit concludes or ends the drag.
+A release outside the destination still dismisses it.
+Drop preparation rechecks the release position and freezes the accepted entry and file URLs.
+The commit consumes that snapshot once and runs the selection callback asynchronously after the source's copy session.
+Sequence checks keep stale end callbacks from cancelling a later drag.
+
+Highlighting requires matching file URLs and a source operation mask that permits copying.
+The same checks protect the final commit.
+A held shortcut that restricts the source to another operation produces a release-key hint rather than a misleading blue target.
+The glass tint and label emphasis change without animation; only the two-point outward offset uses the 140 ms ease-out.
+Hosting layout is resolved when selection changes, including during AppKit drag tracking.
+
+Hit targets cover the complete annulus between radii 50 and 140, independent of decorative path gaps.
+A three-degree angular overlap, capped at 12 percent of a sector's width, absorbs boundary jitter.
+The center and outside remain cancellation regions; an already selected outward edge retains its additional two points with Reduce Motion off.
+Sampling every two degrees at radii 51, 98, and 139 confirms no dead gaps in four-, seven-, and twelve-slice wheels.
+
+New tests failed against the original code for decorative gaps, boundary jitter, invalid copy masks, stale release positions, mouse-exit interference, frozen drop commits, and the mouse-up panel race.
+The callback harness uses actual AppKit panels and views with a protocol fixture for NSDraggingInfo; it does not synthesize an OS drag session.
+It also checks exit and re-entry, duplicate commits, stale end callbacks, idempotent cleanup, stationary mode changes, mismatched file URLs, and outside cancellation.
+All 76 tests, the release build, and strict code-signature verification pass without source warnings.
+A separate reviewer found no blocking issues.
+The rebuilt native app shows aligned blue selection and completed a generated PNG-to-JPEG conversion with no automatic Jobs window.
+The wheel screenshot records the rebuilt application.
+The exact Finder drag-and-shortcut gesture and frame-by-frame highlight latency retain the manual verification limits below.
 
 ## Remaining verification and fidelity limits
 
