@@ -10,8 +10,8 @@ struct WheelPetalAppearance: Identifiable {
 }
 
 enum WheelEmphasis {
-    static let scale: CGFloat = 1.08
-    static let lift: CGFloat = 8
+    static let scale: CGFloat = 1.025
+    static let lift: CGFloat = 2
 
     static func offset(at anchor: CGPoint, from center: CGPoint) -> CGSize {
         let dx = anchor.x - center.x, dy = anchor.y - center.y
@@ -53,7 +53,7 @@ struct WheelAppearance: View {
             .fixedSize().position(x: center.x, y: 341)
         }
         .frame(width: 328, height: 354)
-        .animation(reduceMotion ? nil : .spring(response: 0.26, dampingFraction: 0.72), value: selected)
+        .animation(reduceMotion ? nil : .easeOut(duration: 0.14), value: selected)
         .allowsHitTesting(false)
         .accessibilityHidden(true)
     }
@@ -72,13 +72,11 @@ struct WheelAppearance: View {
                 ForEach(petals) { petal in
                     let active = selected == petal.id
                     let lifted = active && !reduceMotion
-                    // Animating the path keeps native glass, its outline, and hit testing aligned.
+                    // Animating the path keeps native glass and hit testing aligned.
                     let shape = PetalShape(path: petal.path, anchor: petal.position, center: center, emphasis: lifted ? 1 : 0)
                     Color.clear
                         .frame(width: 328, height: 354)
                         .modifier(WheelGlass(shape: shape, selected: active))
-                        .overlay(shape.stroke(Color.accentColor.opacity(active ? 0.85 : 0), lineWidth: 1.2))
-                        .shadow(color: Color.accentColor.opacity(active ? 0.20 : 0), radius: 8, y: 3)
                         .zIndex(active ? 1 : 0)
                 }
             }
@@ -96,7 +94,6 @@ struct WheelAppearance: View {
                 }
                 .foregroundStyle(.primary)
                 .frame(width: petals.count > 7 ? 64 : 78)
-                .scaleEffect(lifted ? WheelEmphasis.scale : 1)
                 .position(petal.position)
                 .offset(offset)
             }
@@ -144,15 +141,15 @@ private struct WheelGlass<S: Shape>: ViewModifier {
             content.background {
                 ZStack {
                     shape.fill(Color(nsColor: .windowBackgroundColor))
-                    if selected { shape.fill(Color.accentColor.opacity(0.35)) }
+                    if selected { shape.fill(Color.accentColor.opacity(0.12)) }
                 }
             }
             .overlay(shape.stroke(Color.primary.opacity(contrast == .increased ? 0.45 : 0.12), lineWidth: contrast == .increased ? 1 : 0.5))
         } else if #available(macOS 26, *) {
-            content.glassEffect(.regular.tint(selected ? Color.accentColor.opacity(0.60) : nil), in: shape)
+            content.glassEffect(.regular.tint(selected ? Color.accentColor.opacity(0.18) : nil), in: shape)
         } else {
             content.background(.ultraThinMaterial, in: shape)
-                .overlay(shape.fill(selected ? Color.accentColor.opacity(0.30) : .clear))
+                .overlay(shape.fill(selected ? Color.accentColor.opacity(0.12) : .clear))
                 .overlay(shape.stroke(Color.primary.opacity(contrast == .increased ? 0.45 : 0.10), lineWidth: 0.5))
         }
     }
