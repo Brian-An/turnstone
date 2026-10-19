@@ -45,6 +45,7 @@ Writing native `.pages` files additionally requires Apple Pages and its Automati
 
 The center and space outside the wheel cancel selection.
 Slice targets include the decorative gaps, with a small overlap that prevents flicker near boundaries.
+Hover anywhere inside a slice, including the blank glass around its label, without first focusing the wheel.
 The active slice highlights immediately and uses a brief, subtle slide away from the wheel center without resizing or bounce.
 Its outward edge remains a valid drop target, and Reduce Motion keeps the highlight still.
 The wheel confirms copy acceptance before highlighting and remains available until the native drop finishes.

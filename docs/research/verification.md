@@ -4,7 +4,7 @@ Verified locally on 2026-10-18 on an Apple silicon Mac.
 
 ## Automated verification
 
-`DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test` passed all 77 XCTest cases with zero failures: 61 core cases and 16 app interaction cases.
+`DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test` passed all 78 XCTest cases with zero failures: 61 core cases and 17 app interaction cases.
 The test build and release build produced no source warnings.
 `scripts/build-app.sh` produced an ad-hoc signed application in `dist/Turnstone.app`.
 `codesign --verify --deep --strict` accepted the application.
@@ -177,6 +177,26 @@ The copy cursor can appear over the center and outer cancellation regions while 
 The first-entry regression failed against the initial rejection and passes against immediate acceptance, including center cancellation and selection on the first slice update.
 Apple documents that updates continue after an initial rejection, so this callback change does not establish the cause of the reported Finder hover delay.
 The full 77-test suite passes; actual first-entry timing during the Finder drag gesture remains unverified.
+
+## Full glass input surface before focus
+
+Reproduced the label-only input mask in the actual running application using the WindowServer mouse-down hit test, `NSWindow.windowNumber(at:belowWindowWithWindowNumber:)`, from a separate NSApplication-initialized process.
+Before the fix, the label radius hit the wheel in all seven slices, while blank points at radii 65, 80, 120, and 135 hit it in none of the seven slices.
+The decorative glass was visible but its clear parent-window pixels passed input through to windows underneath.
+This is separate from the wheel's full-annulus selection geometry and native drag acceptance logic.
+
+The panel uses a system background with one 8-bit alpha step, 1/255, to give the complete window a stable input surface.
+Native glass styling and the nonactivating panel behavior remain intact.
+The same external probe against the rebuilt running app hits all seven slices at every sampled radius, including blank glass and labels.
+A new regression creates the production panel without making it key and checks 84 blank-glass positions through WindowServer rather than calling the selection method directly.
+That regression failed against the clear background and passes with the input backing.
+It skips only when no GUI screen is available.
+
+All 78 tests, the release build, and strict code-signature verification pass without source warnings.
+A separate reviewer found no blocking issues.
+Native inspection confirms the glass appearance remains intact.
+Clicking a blank area near the JPG slice's outer edge in the rebuilt app produced a separate JPEG from the generated PNG fixture, without opening Recent Jobs.
+The exact Finder drag-and-shortcut gesture remains outside the automation tool's capabilities.
 
 ## Remaining verification and fidelity limits
 
