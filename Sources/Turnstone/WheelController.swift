@@ -80,7 +80,10 @@ final class WheelController {
         keyboardMode = keyboard
         if panel == nil {
             let panel = WheelPanel(contentRect: NSRect(x: 0, y: 0, width: 328, height: 354), styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
-            panel.isOpaque = false; panel.backgroundColor = .clear; panel.hasShadow = false
+            panel.isOpaque = false
+            // WindowServer passes input through clear pixels even where native glass is visible.
+            panel.backgroundColor = NSColor.windowBackgroundColor.withAlphaComponent(1.0 / 255.0)
+            panel.hasShadow = false
             panel.level = .popUpMenu
             panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .transient]
             panel.isMovable = false; panel.acceptsMouseMovedEvents = true

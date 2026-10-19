@@ -20,6 +20,38 @@ final class DragInteractionTests: XCTestCase {
     }
 
     @MainActor
+    func testUnfocusedGlassSliceReceivesWindowServerHitsAcrossItsFace() async throws {
+        _ = NSApplication.shared
+        try XCTSkipIf(NSScreen.screens.isEmpty, "Window hit testing requires a GUI session")
+        let model = AppModel()
+        let files = [URL(fileURLWithPath: "/tmp/turnstone-window-hit-fixture.png")]
+        model.wheel.show(files: files, mode: .conversions, keyboard: false)
+        defer { model.wheel.hide() }
+        let panel = try XCTUnwrap(NSApp.windows.compactMap { $0 as? WheelPanel }.first { ($0.contentView as? WheelCanvas)?.files == files })
+        let canvas = try XCTUnwrap(panel.contentView as? WheelCanvas)
+        XCTAssertFalse(panel.isKeyWindow)
+        func hitsWheel(_ point: NSPoint) -> Bool {
+            NSWindow.windowNumber(at: panel.convertPoint(toScreen: point), belowWindowWithWindowNumber: 0) == panel.windowNumber
+        }
+        // Give AppKit a chance to publish the input surface before sampling the whole wheel.
+        for _ in 0..<50 {
+            panel.displayIfNeeded()
+            if hitsWheel(NSPoint(x: 164, y: 261)) { break }
+            try await Task.sleep(nanoseconds: 20_000_000)
+        }
+        for index in canvas.entries.indices {
+            let centerAngle = 90 - Double(index) * 360 / Double(canvas.entries.count)
+            for degrees in [-12.0, 0, 12] {
+                let angle = (centerAngle + degrees) * .pi / 180
+                for radius in [65.0, 80, 120, 135] {
+                    let point = NSPoint(x: 164 + cos(angle) * radius, y: 181 + sin(angle) * radius)
+                    XCTAssertTrue(hitsWheel(point), "Blank glass must receive input before the wheel gains focus: slice \(index), radius \(radius), angle \(degrees)")
+                }
+            }
+        }
+    }
+
+    @MainActor
     func testSmallBoundaryJitterKeepsCurrentSlice() {
         let canvas = WheelCanvas(frame: NSRect(x: 0, y: 0, width: 328, height: 354))
         canvas.entries = Array(repeating: .format("jpg"), count: 4)
