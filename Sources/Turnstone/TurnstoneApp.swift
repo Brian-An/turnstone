@@ -81,7 +81,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 enum Windows {
     private static var windows: [String: NSWindow] = [:]
     private static var delegates: [String: HostedWindowDelegate] = [:]
-    static func show<Content: View>(_ key: String, title: String, size: NSSize, floating: Bool = false, content: Content) {
+    static func show<Content: View>(_ key: String, title: String, size: NSSize, minimumSize: NSSize? = nil, floating: Bool = false, content: Content) {
         if let existing = windows[key] { existing.makeKeyAndOrderFront(nil); NSApp.activate(ignoringOtherApps: true); return }
         let window = NSWindow(contentRect: NSRect(origin: .zero, size: size), styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView], backing: .buffered, defer: false)
         window.title = title
@@ -91,7 +91,7 @@ enum Windows {
         window.backgroundColor = .clear
         window.isReleasedWhenClosed = false
         window.contentView = NSHostingView(rootView: WindowSurface(content: content))
-        window.minSize = NSSize(width: min(size.width, 480), height: min(size.height, 420))
+        window.minSize = minimumSize ?? NSSize(width: min(size.width, 480), height: min(size.height, 420))
         if floating { window.level = .floating; window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary] }
         window.center()
         windows[key] = window

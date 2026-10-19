@@ -58,6 +58,7 @@ struct ToolEditor: View {
     let operation: FileOperation
     let submit: (EditOptions, [URL]) -> Void
     @StateObject private var editor: ImageEditorModel
+    @State private var original = false
     init(files: [URL], operation: FileOperation, submit: @escaping (EditOptions, [URL]) -> Void) {
         self.files = files; self.operation = operation; self.submit = submit
         _editor = StateObject(wrappedValue: ImageEditorModel(files: files, operation: operation))
@@ -66,22 +67,31 @@ struct ToolEditor: View {
         VStack(spacing: 0) {
             HStack {
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(operation.title).font(.system(size: 20, weight: .medium))
+                    Text(operation.title).font(.headline)
                     Text(files.count == 1 ? files[0].lastPathComponent : "\(files.count) files selected").font(.caption).foregroundStyle(.secondary).lineLimit(1).truncationMode(.middle)
                 }
                 Spacer()
+                if isImageEditor {
+                    Toggle("Original", isOn: $original).toggleStyle(.button).glassAction().controlSize(.small)
+                }
                 if editor.loading { ProgressView().controlSize(.small) }
-            }.padding(20)
-            ScrollView {
-                content.padding(20).frame(maxWidth: .infinity)
+            }.padding(.horizontal, 16).padding(.vertical, 10)
+            Divider()
+            if isImageEditor {
+                content.padding(16).frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            } else {
+                EditorScrollView {
+                    content.padding(16).frame(maxWidth: .infinity, alignment: .topLeading)
+                }
             }
             if let error = editor.error { Text(error).font(.caption).foregroundStyle(.red).frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 20).padding(.bottom, 10) }
+            Divider()
             HStack {
-                Button("Reset") { editor.options = EditOptions(); editor.files = files; resetVersion = UUID() }.glassAction()
+                Button("Reset") { editor.options = EditOptions(); editor.files = files; original = false; resetVersion = UUID() }.glassAction()
                 Spacer()
-                Button("Save Copy") { submit(editor.options, editor.files) }.glassAction(prominent: true).controlSize(.large).keyboardShortcut(.defaultAction).disabled(!canSave).help("Saves a new copy beside the original")
-            }.padding(16)
-        }.frame(minWidth: 620, minHeight: 540)
+                Button("Save Copy") { submit(editor.options, editor.files) }.glassAction(prominent: true).keyboardShortcut(.defaultAction).disabled(!canSave).help("Saves a new copy beside the original")
+            }.padding(.horizontal, 16).padding(.vertical, 12)
+        }.frame(minWidth: EditorLayout.minimumSize(for: operation, fileCount: files.count).width, minHeight: EditorLayout.minimumSize(for: operation, fileCount: files.count).height)
         .onReceive(editor.$options.debounce(for: .milliseconds(140), scheduler: RunLoop.main)) { _ in editor.updatePreview() }
         .onChange(of: editor.files) { _ in editor.updatePreview() }
         .onAppear { editor.updatePreview() }
@@ -89,10 +99,14 @@ struct ToolEditor: View {
     }
 
     @State private var resetVersion = UUID()
+    private var isImageEditor: Bool {
+        guard case .tool(let tool) = operation else { return false }
+        return [.editImage, .annotateImage, .background, .cropImage, .redactImage, .collage].contains(tool)
+    }
     @ViewBuilder private var content: some View {
         switch operation {
         case .convert:
-            VStack(alignment: .leading, spacing: 18) {
+            VStack(alignment: .leading, spacing: 12) {
                 Text("EPUB layout").font(.headline)
                 Picker("Reading style", selection: $editor.options.epubLayout) {
                     Text("Reflowable text").tag("reflow"); Text("Original page layout").tag("fixed")
@@ -102,12 +116,12 @@ struct ToolEditor: View {
         case .tool(let tool):
             switch tool {
             case .editImage, .annotateImage, .background, .cropImage, .redactImage, .collage:
-                ImageEditor(editor: editor, tool: tool).id(resetVersion)
+                ImageEditor(editor: editor, tool: tool, original: $original).id(resetVersion)
             case .compress: CompressionControls(files: files, options: $editor.options).id(resetVersion)
             case .metadata: MetadataControls(files: files, options: $editor.options)
             case .organizePDF: PDFOrganizer(file: files[0], options: $editor.options).id(resetVersion)
             case .createPDF, .mergePDF, .joinVideos:
-                VStack(alignment: .leading, spacing: 18) {
+                VStack(alignment: .leading, spacing: 12) {
                     Text(tool == .joinVideos ? "Playback order" : "Document order").font(.headline)
                     FileOrderList(files: $editor.files)
                     Text(tool == .joinVideos ? "Clips use the first video’s canvas and are saved as one MP4." : "Arrange files in the order you want them to appear.").font(.caption).foregroundStyle(.secondary)
@@ -135,12 +149,12 @@ struct FileOrderList: View {
             ForEach(Array(files.enumerated()), id: \.offset) { index, url in
                 HStack {
                     Text("\(index + 1)").font(.caption.monospacedDigit()).foregroundStyle(.secondary).frame(width: 20)
-                    Image(nsImage: NSWorkspace.shared.icon(forFile: url.path)).resizable().frame(width: 30, height: 30)
+                    Image(nsImage: NSWorkspace.shared.icon(forFile: url.path)).resizable().frame(width: 24, height: 24)
                     Text(url.lastPathComponent).lineLimit(1).truncationMode(.middle)
                     Spacer()
                     Button { files.swapAt(index, index - 1) } label: { Image(systemName: "chevron.up") }.disabled(index == 0).help("Move earlier")
                     Button { files.swapAt(index, index + 1) } label: { Image(systemName: "chevron.down") }.disabled(index == files.count - 1).help("Move later")
-                }.padding(10).background(.quaternary.opacity(0.35), in: RoundedRectangle(cornerRadius: 10))
+                }.padding(8).background(.quaternary.opacity(0.35), in: RoundedRectangle(cornerRadius: 10))
             }
         }
     }
@@ -156,7 +170,7 @@ struct CompressionControls: View {
     @State private var preset = "balanced"
     private var size: Int { files.reduce(0) { $0 + ((try? $1.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0) } }
     var body: some View {
-        VStack(alignment: .leading, spacing: 22) {
+        VStack(alignment: .leading, spacing: 14) {
             Text("Original size: \(ByteCountFormatter.string(fromByteCount: Int64(size), countStyle: .file))").font(.headline)
             Picker("Compression preset", selection: $preset) { Text("Balanced").tag("balanced"); Text("Strong").tag("strong") }.pickerStyle(.segmented)
                 .onChange(of: preset) { options.quality = $0 == "balanced" ? 0.78 : 0.45 }
