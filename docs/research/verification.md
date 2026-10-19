@@ -4,7 +4,7 @@ Verified locally on 2026-10-18 on an Apple silicon Mac.
 
 ## Automated verification
 
-`DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test` passed all 64 XCTest cases with zero failures: 61 core cases and three app interaction cases.
+`DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test` passed all 65 XCTest cases with zero failures: 61 core cases and four app interaction cases.
 The test build and release build produced no source warnings.
 `scripts/build-app.sh` produced an ad-hoc signed application in `dist/Turnstone.app`.
 `codesign --verify --deep --strict` accepted the application.
@@ -121,6 +121,22 @@ That regression failed against the resizing effect and passes against uniform tr
 All 64 tests, the release build, and strict code-signature verification pass.
 The native wheel was inspected and its screenshot updated.
 A separate reviewer approved the transformation and hit-target changes.
+
+## Consistent slice entry animation
+
+Each petal has a fixed local glass shape and animates its complete surface outward through a view offset.
+Glass surfaces use independent bounds and fixed stacking rather than a shared glass container or selection-dependent stacking.
+Labels use the same two-point displacement and 140 ms ease-out timing.
+This keeps selection feedback independent of the neighboring slice and the pointer's approach direction.
+Reduce Motion suppresses displacement and animation.
+
+The approach regression exercises the actual WheelCanvas hit testing for every slice in four-item and seven-item wheels.
+It approaches from the center, outer rim, and both neighboring slices, and asserts that selection remains stable from first entry through the rest of the path and stationary hover.
+The initial endpoint diagnostic passed before the rendering change; it did not reproduce the visual artifact.
+All 65 tests, the release build, and strict code-signature verification pass.
+A separate reviewer found no blocking issues in the local shape geometry, offset order, or fixed stacking.
+Native inspection confirms aligned glass and labels for right-side, left-side, and PDF selections.
+Pointer entry timing and the full drag gesture retain the automation limits below; native inspection verifies rendered selection endpoints rather than the complete temporal motion.
 
 ## Remaining verification and fidelity limits
 

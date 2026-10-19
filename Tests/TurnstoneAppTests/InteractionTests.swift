@@ -30,6 +30,41 @@ final class InteractionTests: XCTestCase {
     }
 
     @MainActor
+    func testSliceSelectionIsStableAcrossApproachDirections() {
+        let center = CGPoint(x: 164, y: 181)
+        for count in [4, 7] {
+            for index in 0..<count {
+                let canvas = WheelCanvas(frame: NSRect(x: 0, y: 0, width: 328, height: 354))
+                canvas.entries = Array(repeating: .format("jpg"), count: count)
+                let angle = (90 - Double(index) * 360 / Double(count)) * .pi / 180
+                let target = CGPoint(x: center.x + cos(angle) * 98, y: center.y + sin(angle) * 98)
+                let approaches = [center,
+                    CGPoint(x: center.x + cos(angle) * 155, y: center.y + sin(angle) * 155),
+                    CGPoint(x: center.x + cos(angle + 2 * .pi / Double(count)) * 98, y: center.y + sin(angle + 2 * .pi / Double(count)) * 98),
+                    CGPoint(x: center.x + cos(angle - 2 * .pi / Double(count)) * 98, y: center.y + sin(angle - 2 * .pi / Double(count)) * 98)]
+                for start in approaches {
+                    canvas.selected = nil
+                    var enteredTarget = false
+                    for step in 0...20 {
+                        let progress = Double(step) / 20
+                        canvas.updateSelection(CGPoint(x: start.x + (target.x - start.x) * progress, y: start.y + (target.y - start.y) * progress))
+                        if enteredTarget {
+                            XCTAssertEqual(canvas.selected, index, "Entering from a side must not restart the selected slice")
+                        }
+                        enteredTarget = enteredTarget || canvas.selected == index
+                    }
+                    XCTAssertTrue(enteredTarget)
+                    XCTAssertEqual(canvas.selected, index)
+                    for _ in 0..<5 {
+                        canvas.updateSelection(target)
+                        XCTAssertEqual(canvas.selected, index, "A stationary hover must not reset the slice animation")
+                    }
+                }
+            }
+        }
+    }
+
+    @MainActor
     func testHighlightSlidesWholeSliceOutwardWithoutResizing() {
         let center = CGPoint(x: 164, y: 173)
         for angle in [0.0, 45, 90, 180, 270] {
