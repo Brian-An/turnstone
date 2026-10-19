@@ -198,13 +198,56 @@ Native inspection confirms the glass appearance remains intact.
 Clicking a blank area near the JPG slice's outer edge in the rebuilt app produced a separate JPEG from the generated PNG fixture, without opening Recent Jobs.
 The exact Finder drag-and-shortcut gesture remains outside the automation tool's capabilities.
 
+## Expanded feature verification, 2026-10-19
+
+The complete suite passes 117 XCTest cases with zero failures or skips: 96 core cases and 21 app cases.
+This adds 39 regression and feature cases to the earlier 78-case suite.
+The final test run produces no compiler warnings.
+The final release app builds without warnings, passes strict code-signature verification, and launches successfully.
+Fixtures exercise 259 of the 275 advertised directed conversion routes: 104 media, 89 document/PDF/subtitle, 57 raster/SVG, and nine archive routes.
+The 16 unexercised routes all involve Apple Pages.
+Route checks inspect decoded output or readable content and preserve source bytes; they do not establish fidelity for every real-world document or codec variant.
+
+Coverage includes all 26 editing tool categories, batch partial failures, cancellation before and during processing, output collisions, literal clipboard paths, file copying, shelf deduplication, and preservation of originals.
+Media checks include actual decoded streams, channel gains, loudness, playback speeds, timed solid and blurred redaction, waveform and still-image visualizers, clip order, silence, and metadata across every advertised editable media format.
+Native checks include image orientation, crops and compression across editable formats, OCR, PDF text/page order, locked and malformed PDFs, stored RAR, and archive traversal and special-file rejection.
+Document checks include the remaining non-Pages routes, reopen/readability checks, batch collisions, malformed inputs, fixed EPUB image order and escaped titles, and subtitle timestamp validation.
+
+Native UI testing used disposable generated files through the actual picker, wheels, editors, previews, and Save Copy controls.
+Successful exports cover image compression and adjustment, annotation with undo, image crop, background, manual image redaction, metadata, PDF organization and splitting, audio normalization and channel gains, audio trim and bleep, waveform video, video mute/trim/crop/speed, multiple snapshots, custom video splits, and timed video redaction.
+Batch UI checks cover reordered Create PDF, collage preview and canvas width, reordered video joining, and reordered PDF merging.
+The shelf was populated, pinned, restored to free floating, and emptied without deleting its source.
+A disposable file was moved through the native destination picker.
+The final release also extracted a nested ZIP fixture and exported a WAV with removal overriding a retained private title; inspection confirmed that title is absent.
+AirDrop opened its recipient chooser and was cancelled without sending a file.
+Settings checks cover engine readiness, sound toggle, compression reset, and immediate shortcut label updates and duplicate-key swapping.
+Sound, shortcut, terminal, and login preferences were restored after testing.
+
+The expanded checks reproduced and fixed these defects:
+
+- Native video editors and Audio Visualizer aborted while resolving AVPlayerView because the release executable omitted the AVKit framework link.
+- Shortcut preferences changed internally while their visible picker labels stayed stale.
+- GIF-to-WebM conversion selected an unsupported VP9 pixel format.
+- Metadata editing failed for advertised containers that ExifTool can read but cannot write; these formats use a lossless FFmpeg remux.
+- Selecting Remove all embedded metadata could reapply retained edits for images, PDFs, and both media metadata backends.
+- A single-page inclusive PDF split range was rejected, while fractional page numbers could be truncated.
+- Subtitle conversion accepted reversed, equal, or out-of-range timestamps.
+
+The metadata privacy regressions fail against the original behavior in JPEG, PDF, M4A, and FLAC and pass after the fix.
+They inspect embedded metadata, preserve the source, and confirm that unchecking removal still applies the retained edits.
+The AVKit correction was verified by reopening the native editors, generating a waveform preview, and exporting actual video.
+A separate reviewer checked the combined changes and identified the metadata removal precedence defect before final verification.
+
 ## Remaining verification and fidelity limits
 
 The global Finder drag-and-modifier gesture remains unverified end to end.
 The UI automation tool rejects a standalone modifier press and serializes its key-hold and drag operations, so it cannot reproduce that exact gesture reliably.
 The global detector and actual drag destination are implemented; the native picker and keyboard flow are verified.
 Pages output requires Apple Pages and a macOS Automation permission flow that was not exercised against the user's Pages session.
-Face detection and RAR extraction do not have dedicated fixture coverage.
+Positive face detection remains unverified; negative detection and positive text detection are covered.
+Stored RAR extraction and conversion are covered, while compressed/encrypted RAR and RAR5 variants remain unverified.
+AirDrop delivery, login/restart behavior, audible selection feedback, and the Terminal/iTerm2 destination window were not verified end to end.
+The native automation tool does not permit inspecting Terminal.
 Image crop handles permit free resizing after choosing an initial aspect ratio.
 Complex Office layout reconstruction, photo-adjustment approximations, and external helper cancellation limits are described in the README.
 The application is not notarized or prepared for public binary distribution.
