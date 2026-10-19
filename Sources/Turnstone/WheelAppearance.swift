@@ -10,7 +10,6 @@ struct WheelPetalAppearance: Identifiable {
 }
 
 enum WheelEmphasis {
-    static let scale: CGFloat = 1.025
     static let lift: CGFloat = 2
 
     static func offset(at anchor: CGPoint, from center: CGPoint) -> CGSize {
@@ -22,10 +21,7 @@ enum WheelEmphasis {
 
     static func transform(at anchor: CGPoint, from center: CGPoint, amount: CGFloat = 1) -> CGAffineTransform {
         let offset = offset(at: anchor, from: center)
-        let scale = 1 + (scale - 1) * amount
-        return CGAffineTransform(translationX: anchor.x + offset.width * amount, y: anchor.y + offset.height * amount)
-            .scaledBy(x: scale, y: scale)
-            .translatedBy(x: -anchor.x, y: -anchor.y)
+        return CGAffineTransform(translationX: offset.width * amount, y: offset.height * amount)
     }
 }
 

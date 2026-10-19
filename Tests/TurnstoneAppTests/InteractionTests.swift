@@ -30,13 +30,36 @@ final class InteractionTests: XCTestCase {
     }
 
     @MainActor
+    func testHighlightSlidesWholeSliceOutwardWithoutResizing() {
+        let center = CGPoint(x: 164, y: 173)
+        for angle in [0.0, 45, 90, 180, 270] {
+            let radians = angle * .pi / 180
+            let direction = CGPoint(x: cos(radians), y: sin(radians))
+            let anchor = CGPoint(x: center.x + direction.x * 98, y: center.y + direction.y * 98)
+            let inner = CGPoint(x: center.x + direction.x * 50, y: center.y + direction.y * 50)
+            let outer = CGPoint(x: center.x + direction.x * 140, y: center.y + direction.y * 140)
+            var previousDistance: CGFloat = 50
+            for progress in [0.0, 0.25, 0.5, 0.75, 1.0] {
+                let transform = WheelEmphasis.transform(at: anchor, from: center, amount: progress)
+                let movedInner = inner.applying(transform)
+                let movedOuter = outer.applying(transform)
+                XCTAssertEqual(hypot(movedOuter.x - movedInner.x, movedOuter.y - movedInner.y), 90, accuracy: 0.001)
+                let distance = hypot(movedInner.x - center.x, movedInner.y - center.y)
+                XCTAssertGreaterThanOrEqual(distance + 0.001, previousDistance)
+                previousDistance = distance
+            }
+            XCTAssertEqual(previousDistance, 52, accuracy: 0.001)
+        }
+    }
+
+    @MainActor
     func testHighlightedPetalKeepsItsPoppedOutEdgeSelectable() {
         let canvas = WheelCanvas(frame: NSRect(x: 0, y: 0, width: 328, height: 354))
         canvas.entries = ["jpg", "png", "webp", "pdf"].map(WheelEntry.format)
         for index in 0..<4 {
             canvas.selected = index
             let angle = Double(90 - index * 90) * .pi / 180
-            canvas.updateSelection(NSPoint(x: 164 + cos(angle) * 142, y: 181 + sin(angle) * 142))
+            canvas.updateSelection(NSPoint(x: 164 + cos(angle) * 141, y: 181 + sin(angle) * 141))
             XCTAssertEqual(canvas.selected, NSWorkspace.shared.accessibilityDisplayShouldReduceMotion ? nil : index)
             canvas.updateSelection(NSPoint(x: 164 + cos(angle) * 150, y: 181 + sin(angle) * 150))
             XCTAssertNil(canvas.selected, "The subtle highlight must not retain an oversized outer target")
