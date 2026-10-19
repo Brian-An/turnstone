@@ -36,8 +36,10 @@ final class InteractionTests: XCTestCase {
         for index in 0..<4 {
             canvas.selected = index
             let angle = Double(90 - index * 90) * .pi / 180
-            canvas.updateSelection(NSPoint(x: 164 + cos(angle) * 150, y: 181 + sin(angle) * 150))
+            canvas.updateSelection(NSPoint(x: 164 + cos(angle) * 142, y: 181 + sin(angle) * 142))
             XCTAssertEqual(canvas.selected, NSWorkspace.shared.accessibilityDisplayShouldReduceMotion ? nil : index)
+            canvas.updateSelection(NSPoint(x: 164 + cos(angle) * 150, y: 181 + sin(angle) * 150))
+            XCTAssertNil(canvas.selected, "The subtle highlight must not retain an oversized outer target")
         }
         canvas.updateSelection(NSPoint(x: 264, y: 181))
         XCTAssertEqual(canvas.selected, 1)

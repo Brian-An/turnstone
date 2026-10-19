@@ -96,6 +96,20 @@ The release app builds, passes strict code-signature verification, and was appro
 The updated wheel screenshot records the selected lower slice.
 The full global Finder drag gesture and separate accessibility appearance configurations retain the manual verification limits below.
 
+## Subtle selection feedback
+
+Reviewed Apple's [Motion](https://developer.apple.com/design/human-interface-guidelines/motion) and [Materials](https://developer.apple.com/design/human-interface-guidelines/materials) guidance.
+Apple recommends brief, precise feedback, subdued trackpad effects, and restrained color on Liquid Glass.
+The chosen implementation uses a 140 ms ease-out, a two-point lift, and 2.5 percent enlargement.
+These numerical values are implementation choices rather than Apple-prescribed parameters.
+The selected petal uses a light accent tint and the system glass edge, with no custom glow, colored outline, bounce, or text scaling.
+The existing Reduce Motion and opaque Reduce Transparency branches remain in place.
+The updated regression test initially failed against the oversized target, then passed with the compact highlight geometry.
+It retains the selected edge at radius 142 and cancels at radius 150 in all four directions.
+All 63 tests and the release build pass.
+Native wheel inspection confirms a readable light selection tint and compact lower-slice geometry.
+The updated wheel screenshot records this appearance.
+
 ## Remaining verification and fidelity limits
 
 The global Finder drag-and-modifier gesture remains unverified end to end.
