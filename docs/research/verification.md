@@ -4,7 +4,7 @@ Verified locally on 2026-10-18 on an Apple silicon Mac.
 
 ## Automated verification
 
-`DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test` passed all 76 XCTest cases with zero failures: 61 core cases and 15 app interaction cases.
+`DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test` passed all 77 XCTest cases with zero failures: 61 core cases and 16 app interaction cases.
 The test build and release build produced no source warnings.
 `scripts/build-app.sh` produced an ad-hoc signed application in `dist/Turnstone.app`.
 `codesign --verify --deep --strict` accepted the application.
@@ -167,6 +167,16 @@ A separate reviewer found no blocking issues.
 The rebuilt native app shows aligned blue selection and completed a generated PNG-to-JPEG conversion with no automatic Jobs window.
 The wheel screenshot records the rebuilt application.
 The exact Finder drag-and-shortcut gesture and frame-by-frame highlight latency retain the manual verification limits below.
+
+## Immediate first-entry acceptance
+
+Valid file drags advertise copy acceptance as soon as they enter the wheel, including its center.
+Selection updates on the first movement onto a slice without a dwell timer.
+Drop preparation still requires a selected slice at the release position, and center drops still cancel.
+The copy cursor can appear over the center and outer cancellation regions while the payload is valid.
+The first-entry regression failed against the initial rejection and passes against immediate acceptance, including center cancellation and selection on the first slice update.
+Apple documents that updates continue after an initial rejection, so this callback change does not establish the cause of the reported Finder hover delay.
+The full 77-test suite passes; actual first-entry timing during the Finder drag gesture remains unverified.
 
 ## Remaining verification and fidelity limits
 
