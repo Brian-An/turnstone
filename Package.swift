@@ -10,7 +10,8 @@ let package = Package(
     ],
     targets: [
         .target(name: "TurnstoneCore"),
-        .executableTarget(name: "Turnstone", dependencies: ["TurnstoneCore"]),
+        // VideoPlayer's SwiftUI overlay resolves AVPlayerView dynamically.
+        .executableTarget(name: "Turnstone", dependencies: ["TurnstoneCore"], linkerSettings: [.linkedFramework("AVKit")]),
         .testTarget(name: "TurnstoneCoreTests", dependencies: ["TurnstoneCore"]),
         .testTarget(name: "TurnstoneAppTests", dependencies: ["Turnstone"])
     ]

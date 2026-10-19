@@ -175,9 +175,9 @@ struct SettingsView: View {
                     Picker("Terminal application", selection: $terminal) { Text("Terminal").tag("Terminal"); Text("iTerm2").tag("iTerm2") }
                 }
                 Section("Drag shortcuts") {
-                    keyPicker("Conversion wheel", key: "conversionKey", fallback: "shift")
-                    keyPicker("Tool wheel", key: "toolsKey", fallback: "command")
-                    keyPicker("Action wheel", key: "actionsKey", fallback: "control")
+                    keyPicker("Conversion wheel", selection: $conversionKey)
+                    keyPicker("Tool wheel", selection: $toolsKey)
+                    keyPicker("Action wheel", selection: $actionsKey)
                     Text("Tap the modifier during a file drag. The wheel stays open after you release it.").font(.caption).foregroundStyle(.secondary)
                 }
                 if let error { Text(error).font(.caption).foregroundStyle(.red) }
@@ -210,13 +210,13 @@ struct SettingsView: View {
         }.padding(12).frame(minWidth: 540, idealWidth: 600, minHeight: 470, idealHeight: 540).background(WindowBackdrop().ignoresSafeArea())
     }
 
-    private func keyPicker(_ title: String, key: String, fallback: String) -> some View {
-        Picker(title, selection: Binding(get: { UserDefaults.standard.string(forKey: key) ?? fallback }, set: { value in
-            let prior = UserDefaults.standard.string(forKey: key) ?? fallback
-            for (other, otherDefault) in [("conversionKey", "shift"), ("toolsKey", "command"), ("actionsKey", "control")] where other != key {
-                if (UserDefaults.standard.string(forKey: other) ?? otherDefault) == value { UserDefaults.standard.set(prior, forKey: other) }
+    private func keyPicker(_ title: String, selection: Binding<String>) -> some View {
+        Picker(title, selection: Binding(get: { selection.wrappedValue }, set: { value in
+            let prior = selection.wrappedValue
+            for other in [$conversionKey, $toolsKey, $actionsKey] where other.wrappedValue == value {
+                other.wrappedValue = prior
             }
-            UserDefaults.standard.set(value, forKey: key)
+            selection.wrappedValue = value
         })) {
             Text("⇧ Shift").tag("shift"); Text("⌘ Command").tag("command"); Text("⌃ Control").tag("control"); Text("⌥ Option").tag("option")
         }
