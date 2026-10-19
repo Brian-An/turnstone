@@ -439,7 +439,8 @@ public struct NativeEngine {
                 let groups: [[Int]]
                 if !request.options.ranges.isEmpty {
                     groups = try request.options.ranges.map { range in
-                        guard range.start.isFinite, range.end.isFinite, range.start >= 1, range.end >= range.start, range.end <= Double(document.pageCount) else { throw TurnstoneError.invalid("Choose valid PDF page ranges.") }
+                        guard range.start.isFinite, range.end.isFinite, range.start >= 1, range.end >= range.start, range.end <= Double(document.pageCount),
+                              range.start.rounded() == range.start, range.end.rounded() == range.end else { throw TurnstoneError.invalid("Choose valid PDF page ranges.") }
                         return Array((Int(range.start) - 1)...(Int(range.end) - 1))
                     }
                 } else { groups = (0..<document.pageCount).map { [$0] } }
@@ -456,7 +457,7 @@ public struct NativeEngine {
             }
             if tool == .metadata {
                 var attributes = request.options.removeAllMetadata ? [:] : document.documentAttributes ?? [:]
-                for (key, value) in request.options.metadata {
+                for (key, value) in request.options.metadata where !request.options.removeAllMetadata {
                     let attribute = PDFDocumentAttribute(rawValue: key)
                     if value.isEmpty { attributes.removeValue(forKey: attribute) } else { attributes[attribute] = value }
                 }
@@ -611,7 +612,7 @@ public struct NativeEngine {
         try FileManager.default.copyItem(at: file, to: output)
         var arguments = ["-overwrite_original"]
         if options.removeAllMetadata { arguments.append("-all=") }
-        for key in options.metadata.keys.sorted() {
+        for key in options.metadata.keys.sorted() where !options.removeAllMetadata {
             guard !key.isEmpty, key.allSatisfy({ $0.isLetter || $0.isNumber || $0 == ":" || $0 == "_" || $0 == "-" }), !key.hasPrefix("-") else { throw TurnstoneError.invalid("Invalid metadata field name.") }
             arguments.append("-\(key)=\(options.metadata[key] ?? "")")
         }
@@ -633,6 +634,14 @@ public struct NativeEngine {
             let line = lines[timestampIndex]
             guard let match = regex.firstMatch(in: line, range: NSRange(line.startIndex..., in: line)), timestampIndex + 1 < lines.count else { throw TurnstoneError.invalid("The subtitle contains an invalid cue.") }
             func field(_ index: Int) -> String { Range(match.range(at: index), in: line).map { String(line[$0]) } ?? "00" }
+            func timestamp(_ offset: Int) -> Double? {
+                guard let hours = Double(field(offset)), let minutes = Double(field(offset + 1)), minutes < 60,
+                      let seconds = Double(field(offset + 2)), seconds < 60, let milliseconds = Double(field(offset + 3)) else { return nil }
+                return hours * 3600 + minutes * 60 + seconds + milliseconds / 1000
+            }
+            guard let start = timestamp(1), let end = timestamp(5), start.isFinite, end.isFinite, end > start else {
+                throw TurnstoneError.invalid("Subtitle timestamps must be valid and end after they start.")
+            }
             let separator = target == "srt" ? "," : "."
             let timing = "\(field(1)):\(field(2)):\(field(3))\(separator)\(field(4)) --> \(field(5)):\(field(6)):\(field(7))\(separator)\(field(8))"
             cues.append((timing, lines[(timestampIndex + 1)...].joined(separator: "\n").trimmingCharacters(in: .newlines)))
