@@ -1,125 +1,141 @@
-# Turnstone
+<p align="center">
+  <img src="docs/brand/turnstone-icon.png" width="104" alt="Turnstone's blue faceted stone icon">
+</p>
 
-<img src="docs/brand/turnstone-icon.png" width="96" alt="Turnstone icon">
+<h1 align="center">Turnstone</h1>
 
-A native, open source, offline file utility for macOS, inspired by [Tangerine](https://tangerineformac.com/).
-Drag a file, tap a modifier, and drop onto a contextual wheel.
-The implementation uses original Swift code, an original stone logo, and macOS system artwork.
-The minimal interface uses native Liquid Glass on macOS 26 and later, with translucent material and standard controls on older Macs.
-Controls and selection highlights follow the Mac’s system accent color, with a blue application icon.
+<p align="center"><strong>Your everyday file tools, a drag away.</strong></p>
+<p align="center">Convert, edit, and organize files on your Mac.<br>Free, open source, and offline.</p>
 
-![Native conversion wheel](docs/screenshots/wheel.jpg)
+<p align="center">
+  <a href="https://github.com/Brian-An/turnstone/releases/download/v0.1.0-preview.1/Turnstone-0.1.0-preview.1-arm64.dmg"><img src="https://img.shields.io/badge/Download%20for%20Mac-Preview-2463EB?style=for-the-badge" alt="Download Turnstone preview for Apple Silicon Macs"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-526071?style=for-the-badge" alt="MIT license"></a>
+</p>
 
-## Run
+<p align="center">Apple Silicon (M1 or later) · macOS 13+ · Preview, not notarized</p>
+<p align="center"><a href="#how-it-works">How it works</a> · <a href="#install">Install</a> · <a href="#what-can-i-do-with-it">Features</a> · <a href="#build-from-source">Build from source</a></p>
 
-Build with Xcode 26 or later and its macOS SDK.
-The resulting app runs on macOS 13 or later.
-Use full Xcode to run the XCTest suite.
+---
 
-```sh
-./scripts/build-app.sh
-open "dist/Turnstone.app"
-```
+## What it does
 
-The application lives in the menu bar.
-Choose **Turnstone** from its menu to open the welcome window.
+Turnstone lives in your menu bar and puts useful file actions next to your cursor.
+Drag a file in Finder, tap a shortcut, and a wheel appears with options for that file.
+Drop onto an option to convert it, open an editor, or perform a file action.
 
-For the extended local format support:
+For example: drag a PNG, tap **Shift**, and drop onto **WEBP** to save a web-friendly copy beside the original.
+
+<p align="center">
+  <img src="docs/screenshots/wheel.jpg" width="390" alt="Turnstone's image conversion wheel, with WEBP selected and JPG, PDF, BMP, AVIF, TIFF, and HEIC also available">
+  <br><sub>The conversion wheel shows formats available for your selected file.</sub>
+</p>
+
+## How it works
+
+1. **Drag** one or more files in Finder and keep the mouse button held down.
+2. **Tap** a shortcut from the table below to open a wheel.
+3. **Release the shortcut key**, move onto the option you want, and keep dragging.
+4. **Drop** the files to apply the action or open its editor.
+
+| Shortcut | Opens | Try it with |
+| --- | --- | --- |
+| **⇧ Shift** | Convert | PNG → WEBP, MOV → MP4, PDF → text |
+| **⌘ Command** | Tools | Compress an image, trim audio, reorder PDF pages |
+| **⌃ Control** | Actions | AirDrop, Copy Path, Move, or Floating Shelf |
+
+Drop in the center or outside the wheel to cancel.
+Change shortcuts in **Settings → General → Drag shortcuts**.
+
+**Prefer a file picker?** Click the Turnstone menu bar icon and choose **Choose Files…**, or drop files into its welcome window.
+Use the arrow keys to select an option, **Return** to apply it, and **Escape** to close the wheel.
+
+Conversions and edits save **new copies beside your originals**.
+If a name is already taken, Turnstone adds a number.
+The explicit **Move** action relocates the original after you choose a destination.
+Open **Recent Jobs** from the menu bar to check progress, cancel a job, inspect errors, or reveal a finished file.
+
+## Install
+
+### Download the preview
+
+**[Download Turnstone for Apple Silicon](https://github.com/Brian-An/turnstone/releases/download/v0.1.0-preview.1/Turnstone-0.1.0-preview.1-arm64.dmg)** · [Release notes and checksums](https://github.com/Brian-An/turnstone/releases/tag/v0.1.0-preview.1)
+
+1. Open the downloaded `.dmg` file.
+2. Drag **Turnstone** into **Applications**.
+3. Open Turnstone from Applications and look for its stone icon in the menu bar.
+
+This is an early preview, ad-hoc signed and **not notarized by Apple**.
+macOS may block the first launch.
+If you trust this download, try opening it once, then use **System Settings → Privacy & Security → Open Anyway**, following [Apple's instructions](https://support.apple.com/en-us/102445).
+
+The preview download requires an **Apple Silicon Mac with macOS 13 or later**.
+Intel users can [build from source](#build-from-source); an Intel download is not provided yet.
+
+### Add more formats (optional)
+
+Basic image, PDF, subtitle, and archive tools work with macOS alone.
+For audio/video and extended image, metadata, and document support, install these local tools with [Homebrew](https://brew.sh):
 
 ```sh
 brew install ffmpeg imagemagick exiftool pandoc
 brew install --cask libreoffice
 ```
 
-Basic image, PDF, subtitle, and archive functionality uses macOS frameworks and system utilities.
-Settings shows which optional engines are available.
-Missing dependencies and unsupported codecs produce an error rather than a fake result.
-Writing native `.pages` files additionally requires Apple Pages and its Automation permission.
+Open **Settings → Engines** to see what is ready on your Mac.
+Missing engines produce an explanatory error; installing Turnstone does not install these tools automatically.
+Exporting native `.pages` files also requires **Apple Pages** and its macOS Automation permission.
 
-## Use
+## What can I do with it?
 
-1. Start dragging one or more files in Finder.
-2. Tap **Shift** for conversions, **Command** for tools, or **Control** for file actions.
-3. Release the key and move onto a wheel petal.
-4. Drop to apply the operation.
+| Files | Examples |
+| --- | --- |
+| **Images** | Convert formats, compress, crop, adjust colors, annotate, redact, add backgrounds, or make a collage |
+| **Audio & video** | Convert, trim, compress, normalize audio, mute video, change speed, join clips, or take snapshots |
+| **PDFs** | Compress, merge, split, reorder pages, extract text, or export pages as images |
+| **Documents** | Convert text, Word, Pages, EPUB, spreadsheets, and presentations using available engines |
+| **Subtitles & archives** | Convert SRT/VTT, extract archives, or convert between ZIP, TAR, and GZIP |
+| **File actions** | AirDrop, copy files or paths, move files, collect them on a floating shelf, or open their folder in Terminal/iTerm2 |
 
-The center and space outside the wheel cancel selection.
-Slice targets include the decorative gaps, with a small overlap that prevents flicker near boundaries.
-Hover anywhere inside a slice, including the blank glass around its label, without first focusing the wheel.
-The active slice highlights immediately and uses a brief, subtle slide away from the wheel center without resizing or bounce.
-Its outward edge remains a valid drop target, and Reduce Motion keeps the highlight still.
-The wheel confirms copy acceptance before highlighting and remains available until the native drop finishes.
-If holding a shortcut prevents copying, release the key while keeping the file dragged.
-Choose Files from the menu or drop files into the welcome window for the keyboard workflow.
-Arrow keys select a petal, Return applies it, and Escape closes the wheel.
-The modifier shortcuts can be changed in Settings.
+The catalog contains **275 conversion routes across 45 input formats**.
+Available actions depend on the file type, selected batch, installed engines, and codecs.
+See the [full feature inventory](docs/research/feature-inventory.md) for details.
 
-Conversions and edits save new copies beside the originals, with numbered names on collisions.
-Conversions finish without opening windows or Finder.
-Open **Recent Jobs** from the menu to inspect progress, errors, or completed files, and use its folder button to reveal an output.
-Jobs support cancellation and per-file errors.
-The explicit **Move** action relocates originals after a destination picker and collision checks.
-No file is uploaded for conversion.
-Pages, LibreOffice, and other independently installed applications retain their own behavior and preferences.
+<p align="center">
+  <img src="docs/screenshots/editor-background-compact.jpg" width="460" alt="Turnstone's native Background editor with a live image preview, gradient, padding, corner, shadow, and ratio controls">
+  <br><sub>Tools open a native editor when an action needs your input.</sub>
+</p>
 
-## Features
+## Privacy
 
-- A catalog of 275 directed conversion routes across 45 input formats.
-- Contextual image, audio, video, PDF, document, spreadsheet, presentation, subtitle, EPUB, and archive operations.
-- All 26 researched tool categories, including photo adjustment, annotation, background styling, crops, collage, metadata, compression, trimming, normalization, channels, bleeping, redaction, splitting, joining, snapshots, audio visualization, and PDF organization.
-- AirDrop, a draggable floating shelf with edge pinning, clipboard file copy, Move, Copy Path, and Terminal or iTerm2.
-- Native previews, editable image regions, waveform and timeline controls, page thumbnails, and batch ordering.
-- Launch at login, custom modifier keys, optional selection sounds, and manual Finder reveal.
+File processing runs locally on your Mac.
+Turnstone does not upload files for conversion and needs no account or subscription.
+Separately installed apps such as Pages and LibreOffice retain their own behavior and preferences.
 
-See the [feature inventory](docs/research/feature-inventory.md) for research evidence and fidelity limits.
-Catalog entries describe supported routes; successful conversion also depends on the input and locally available engines.
+## Preview status
 
-## Fidelity and limitations
+Turnstone is an independent implementation inspired by [Tangerine](https://tangerineformac.com/), with original Swift code and branding.
+It is not affiliated with Tangerine and does not include its proprietary code or artwork.
 
-The radial workflow and editor controls are independently recreated from the public site and 22 published editor screenshots.
-This project does not include Tangerine's proprietary code, artwork, sounds, or payment system.
+The picker, keyboard wheel, and many conversion/editor flows have been exercised end to end.
+The global Finder drag-and-shortcut gesture still needs a manual end-to-end check.
+Complex Office layouts may lose fidelity, and Pages export still needs permission-flow verification.
+Read the [known limitations](docs/LIMITATIONS.md) and [verification record](docs/research/verification.md) before relying on a particular workflow.
 
-PDF-to-Office exports recover editable text and inferred table columns rather than reconstructing complex page layouts, charts, formulas, or slide objects.
-Document conversions through AppKit can lose advanced Word formatting and attachments.
-Pages output uses the actual native format, but that Automation integration needs verification on a Mac with Pages permission granted.
-The native picker, keyboard wheel, conversion, editing, and Finder result flows have been exercised end to end.
-Global Finder drag activation and dropping still need a manual gesture check because the UI automation tool cannot hold a modifier independently during its drag operation.
-Legacy resource-fork-only text clippings are unsupported.
-Ogg output uses Opus audio.
-Compression refuses unattainable targets and keeps the original.
-Image whites, blacks, clarity, and dehaze controls use Core Image approximations.
-External helper processes receive termination on cancellation; descendants and helpers that ignore termination may require manual cleanup.
+## Build from source
 
-The app is locally ad-hoc signed by the build script.
-Public distribution still requires release packaging, signing, notarization, and review of the licenses of any bundled conversion engines.
-Engines are discovered locally and are not redistributed in this repository.
-
-## Branding
-
-The faceted stone mark is defined once in `Sources/Turnstone/BrandMark.swift` and rendered for the menu bar, interface, and app icon.
-The build script generates every standard icon representation at its exact pixel size.
-PNG exports are available in `docs/brand`.
-The stable bundle identifier preserves existing preferences and macOS permissions across the app rename.
-
-## Develop and test
+Requires **Xcode 26 or later**, its macOS SDK, and Command Line Tools.
+The resulting app targets macOS 13 or later.
 
 ```sh
-swift test
-CONFIGURATION=debug ./scripts/build-app.sh
+git clone https://github.com/Brian-An/turnstone.git
+cd turnstone
+./scripts/build-app.sh
+open dist/Turnstone.app
 ```
 
-If the selected developer directory only contains Command Line Tools, use the full Xcode installation for tests:
-
-```sh
-DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test
-```
-
-Tests generate real fixtures and check conversion outputs, source preservation, filename collisions, archive safety, process argument handling, cancellation, media duration and channels, redaction pixels, audio bleep frequencies, editable Office exports, and malformed inputs.
-Optional-engine tests skip explicitly when their helper is unavailable.
-
-`TurnstoneCore` owns format rules, validation, safe output publication, and native/media/document engines.
-`Turnstone` owns the menu bar, wheel, file actions, jobs, settings, and native editors.
-The [design](docs/superpowers/specs/2026-10-18-macos-design.md) and [implementation plan](docs/superpowers/plans/2026-10-18-macos-app.md) record the researched target and implementation decisions.
+For tests, architecture, and contribution notes, see [Development](docs/DEVELOPMENT.md).
+For download packaging, see [Releasing](docs/RELEASING.md).
+The landing page has its own repository: [turnstone-site](https://github.com/Brian-An/turnstone-site).
 
 ## License
 
