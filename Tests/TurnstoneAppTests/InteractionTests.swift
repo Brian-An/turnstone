@@ -6,6 +6,30 @@ import TurnstoneCore
 
 final class InteractionTests: XCTestCase {
     @MainActor
+    func testFailedConversionOpensRecentJobsAndPreservesInput() async throws {
+        _ = NSApplication.shared
+        Windows.close("jobs")
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { Windows.close("jobs"); try? FileManager.default.removeItem(at: directory) }
+        let source = directory.appendingPathComponent("damaged.png")
+        let original = Data("invalid image fixture".utf8)
+        try original.write(to: source)
+        let model = AppModel()
+        model.submit(JobRequest(files: [source], operation: .convert("jpg")))
+        let job = try XCTUnwrap(model.jobs.first)
+        let completed = expectation(description: "Failed conversion finishes")
+        let observation = job.$finished.filter { $0 }.prefix(1).sink { _ in completed.fulfill() }
+        defer { observation.cancel() }
+        await fulfillment(of: [completed], timeout: 10)
+
+        XCTAssertEqual(job.errors.count, 1)
+        XCTAssertTrue(job.outputs.isEmpty)
+        XCTAssertEqual(try Data(contentsOf: source), original)
+        XCTAssertTrue(NSApp.windows.contains { $0.title == "Conversion Jobs" && $0.isVisible })
+    }
+
+    @MainActor
     func testSubmittingConversionDoesNotOpenRecentJobs() async throws {
         _ = NSApplication.shared
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)

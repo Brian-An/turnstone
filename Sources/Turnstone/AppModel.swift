@@ -12,7 +12,10 @@ final class AppModel: ObservableObject {
 
     func showHome() { Windows.show("home", title: "Turnstone", size: NSSize(width: 480, height: 520), content: HomeView(model: self)) }
     func showJobs() { Windows.show("jobs", title: "Conversion Jobs", size: NSSize(width: 600, height: 480), content: JobsView(model: self)) }
-    func showSettings() { Windows.show("settings", title: "Turnstone Settings", size: NSSize(width: 620, height: 560), content: SettingsView()) }
+    func showSettings(tab: SettingsTab = .general) {
+        UserDefaults.standard.set(tab.rawValue, forKey: "settingsTab")
+        Windows.show("settings", title: "Turnstone Settings", size: NSSize(width: 620, height: 560), content: SettingsView())
+    }
     func showShelf() {
         Windows.show("shelf", title: "Floating Shelf", size: NSSize(width: 340, height: 420), floating: true, content: ShelfView(model: self))
         Windows.pinShelf(to: UserDefaults.standard.string(forKey: "shelfEdge") ?? "free")
@@ -55,7 +58,7 @@ final class AppModel: ObservableObject {
         let job = ConversionJob(request: request)
         jobs.insert(job, at: 0)
         if jobs.count > 50 { jobs = Array(jobs.prefix(50)) + jobs.dropFirst(50).filter { !$0.finished } }
-        job.start()
+        job.start { [weak self] in self?.showJobs() }
     }
 
     func perform(_ action: FileAction, files: [URL]) {
@@ -130,7 +133,7 @@ final class ConversionJob: ObservableObject, Identifiable {
     private var task: Task<Void, Never>?
     init(request: JobRequest) { self.request = request }
 
-    func start() {
+    func start(onFailure: @escaping @MainActor () -> Void) {
         guard task == nil, !finished else { return }
         do {
             let context = try ExecutionContext { [weak self] text in
@@ -156,8 +159,12 @@ final class ConversionJob: ObservableObject, Identifiable {
                 }
                 finished = true
                 message = cancelled ? "Cancelled" : errors.isEmpty ? "Finished" : "Finished with errors"
+                if !errors.isEmpty { onFailure() }
             }
-        } catch { errors = [error.localizedDescription]; message = "Couldn’t start"; finished = true }
+        } catch {
+            errors = [error.localizedDescription]; message = "Couldn’t start"; finished = true
+            onFailure()
+        }
     }
 
     func cancel() {

@@ -5,6 +5,7 @@ import TurnstoneCore
 
 struct HomeView: View {
     @ObservedObject var model: AppModel
+    @AppStorage("conversionKey") private var conversionKey = "shift"
     @State private var targeted = false
     var body: some View {
         VStack(spacing: 0) {
@@ -15,13 +16,19 @@ struct HomeView: View {
                 Button { model.showSettings() } label: { Image(systemName: "gearshape").frame(width: 18, height: 18) }.glassAction().help("Settings")
             }.padding(.horizontal, 24).padding(.top, 16).padding(.bottom, 8)
             ScrollView {
-                VStack(spacing: 18) {
-                    WheelPreview().frame(width: 328, height: 354).scaleEffect(0.68).frame(width: 223, height: 241).accessibilityHidden(true)
-                    Text("Drag a file. Tap a key. Choose a format.")
-                        .multilineTextAlignment(.center).font(.callout).foregroundStyle(.secondary)
+                VStack(spacing: 14) {
+                    WheelPreview().frame(width: 328, height: 354).scaleEffect(0.60).frame(width: 197, height: 213).accessibilityHidden(true)
+                    VStack(spacing: 5) {
+                        Text("Drag a file in Finder, then tap \(WheelMode.conversions.symbol) \(conversionKey.capitalized).")
+                            .font(.callout)
+                        Text("Release the key, keep dragging, and drop onto a format.")
+                            .font(.caption).foregroundStyle(.secondary)
+                    }.multilineTextAlignment(.center)
                     Button("Choose Files…") { model.chooseFiles() }.glassAction(prominent: true).controlSize(.large).keyboardShortcut("o")
                     Text(targeted ? "Drop to choose an operation" : "Or drop files anywhere in this window")
                         .font(.caption).foregroundStyle(targeted ? Color.accentColor : .secondary)
+                    Button("Set up more formats…") { model.showSettings(tab: .engines) }
+                        .buttonStyle(.link).font(.caption)
                 }.frame(maxWidth: .infinity).padding(.horizontal, 24).padding(.bottom, 20)
             }
             HStack {
@@ -75,6 +82,7 @@ struct JobsView: View {
 
 private struct JobRow: View {
     @ObservedObject var job: ConversionJob
+    @State private var errorsExpanded = true
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
@@ -98,7 +106,7 @@ private struct JobRow: View {
                 Text("\(job.message) · \(job.outputs.count) output\(job.outputs.count == 1 ? "" : "s")").font(.caption).foregroundStyle(.secondary)
             }
             if !job.errors.isEmpty {
-                DisclosureGroup("\(job.errors.count) error\(job.errors.count == 1 ? "" : "s")") {
+                DisclosureGroup("\(job.errors.count) error\(job.errors.count == 1 ? "" : "s")", isExpanded: $errorsExpanded) {
                     ForEach(Array(job.errors.enumerated()), id: \.offset) { _, error in
                         Text(error).font(.caption).foregroundStyle(.secondary).textSelection(.enabled).frame(maxWidth: .infinity, alignment: .leading).padding(.top, 5)
                     }
@@ -154,7 +162,10 @@ struct ShelfView: View {
     }
 }
 
+enum SettingsTab: String { case general, engines, about }
+
 struct SettingsView: View {
+    @AppStorage("settingsTab") private var tab: SettingsTab = .general
     @AppStorage("wheelSound") private var sound = false
     @AppStorage("terminalApp") private var terminal = "Terminal"
     @AppStorage("conversionKey") private var conversionKey = "shift"
@@ -164,7 +175,7 @@ struct SettingsView: View {
     @State private var error: String?
     @State private var refresh = UUID()
     var body: some View {
-        TabView {
+        TabView(selection: $tab) {
             Form {
                 Section("Workflow") {
                     Toggle("Play a sound when a wheel item is selected", isOn: $sound)
@@ -181,7 +192,7 @@ struct SettingsView: View {
                     Text("Tap the modifier during a file drag. The wheel stays open after you release it.").font(.caption).foregroundStyle(.secondary)
                 }
                 if let error { Text(error).font(.caption).foregroundStyle(.red) }
-            }.formStyle(.grouped).scrollContentBackground(.hidden).tabItem { Label("General", systemImage: "gearshape") }
+            }.formStyle(.grouped).scrollContentBackground(.hidden).tabItem { Label("General", systemImage: "gearshape") }.tag(SettingsTab.general)
             ScrollView { VStack(alignment: .leading, spacing: 14) {
                 Text("Conversion engines").font(.title3.weight(.semibold))
                 Text("Basic image, PDF, subtitle, and archive tools run with macOS. These local engines add more formats.").font(.callout).foregroundStyle(.secondary)
@@ -199,14 +210,14 @@ struct SettingsView: View {
                 Text("Writing .pages files additionally uses Apple Pages and its macOS Automation permission. Files stay on your Mac.").font(.caption).foregroundStyle(.secondary)
                 Button("Refresh") { refresh = UUID() }
                 Spacer(minLength: 0)
-            }.padding(24).frame(maxWidth: .infinity, alignment: .leading) }.id(refresh).tabItem { Label("Engines", systemImage: "puzzlepiece.extension") }
+            }.padding(24).frame(maxWidth: .infinity, alignment: .leading) }.id(refresh).tabItem { Label("Engines", systemImage: "puzzlepiece.extension") }.tag(SettingsTab.engines)
             VStack(spacing: 16) {
                 TurnstoneLogo().frame(width: 64, height: 64).foregroundStyle(Color.accentColor)
                 Text("Turnstone").font(.title.bold())
                 Text("An open source file utility for macOS.").foregroundStyle(.secondary)
                 Text("Independent implementation inspired by Tangerine.\nConversions run locally. Originals stay intact.").multilineTextAlignment(.center).font(.callout).foregroundStyle(.secondary)
                 Link("Reference product", destination: URL(string: "https://tangerineformac.com/")!)
-            }.frame(maxWidth: .infinity, maxHeight: .infinity).tabItem { Label("About", systemImage: "info.circle") }
+            }.frame(maxWidth: .infinity, maxHeight: .infinity).tabItem { Label("About", systemImage: "info.circle") }.tag(SettingsTab.about)
         }.padding(12).frame(minWidth: 540, idealWidth: 600, minHeight: 470, idealHeight: 540).background(WindowBackdrop().ignoresSafeArea())
     }
 

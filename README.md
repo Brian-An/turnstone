@@ -26,8 +26,8 @@ Drop onto an option to convert it, open an editor, or perform a file action.
 For example: drag a PNG, tap **Shift**, and drop onto **WEBP** to save a web-friendly copy beside the original.
 
 <p align="center">
-  <img src="assets/wheel.jpg" width="390" alt="Turnstone's image conversion wheel, with WEBP selected and JPG, PDF, BMP, AVIF, TIFF, and HEIC also available">
-  <br><sub>The conversion wheel shows formats available for your selected file.</sub>
+  <img src="assets/finder-conversion.gif" width="800" alt="Looping recording of dragging a WebP file in Finder, opening Turnstone's conversion wheel, and dropping onto JPG to create a separate JPEG">
+  <br><sub>Drag, tap Shift, and drop onto a format. A new copy appears beside the original.</sub>
 </p>
 
 ## How it works
@@ -52,7 +52,9 @@ Use the arrow keys to select an option, **Return** to apply it, and **Escape** t
 Conversions and edits save **new copies beside your originals**.
 If a name is already taken, Turnstone adds a number.
 The explicit **Move** action relocates the original after you choose a destination.
-Open **Recent Jobs** from the menu bar to check progress, cancel a job, inspect errors, or reveal a finished file.
+Successful conversions finish quietly.
+If a job fails, **Recent Jobs** opens with its error details expanded.
+Open it from the menu bar at any time to check progress, cancel a job, or reveal a finished file.
 
 ## Install
 
@@ -116,7 +118,7 @@ Turnstone is an independent implementation inspired by [Tangerine](https://tange
 It is not affiliated with Tangerine and does not include its proprietary code or artwork.
 
 The picker, keyboard wheel, and many conversion/editor flows have been exercised end to end.
-The global Finder drag-and-shortcut gesture still needs a manual end-to-end check.
+The global Finder drag-and-shortcut gesture has also been manually checked by the maintainer.
 Complex Office layouts may lose fidelity, and Pages export still needs permission-flow verification.
 
 ## Build from source
