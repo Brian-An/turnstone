@@ -120,6 +120,8 @@ It is not affiliated with Tangerine and does not include its proprietary code or
 The picker, keyboard wheel, and many conversion/editor flows have been exercised end to end.
 The global Finder drag-and-shortcut gesture has also been manually checked by the maintainer.
 Complex Office layouts may lose fidelity, and Pages export still needs permission-flow verification.
+AirDrop delivery, login/restart behavior, positive face detection, and compressed or encrypted RAR variants still need broader verification.
+External helpers receive termination on cancellation, but descendants or helpers that ignore termination may need manual cleanup.
 
 ## Build from source
 
@@ -133,7 +135,15 @@ cd turnstone
 open dist/Turnstone.app
 ```
 
+For local setup, tests, and pull requests, see [Contributing](CONTRIBUTING.md).
 The landing page has its own repository: [turnstone-site](https://github.com/Brian-An/turnstone-site).
+
+## Contributing
+
+Bug reports, documentation improvements, tests, and code contributions are welcome.
+Start with the [contribution guide](CONTRIBUTING.md), [open an issue](https://github.com/Brian-An/turnstone/issues/new/choose), or browse [good first issues](https://github.com/Brian-An/turnstone/labels/good%20first%20issue).
+GitHub Actions runs the tests and builds the app for pull requests.
+Report vulnerabilities through the [private security reporting channel](SECURITY.md).
 
 ## License
 

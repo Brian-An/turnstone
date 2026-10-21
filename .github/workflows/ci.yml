@@ -1,0 +1,75 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  macos:
+    name: macOS tests and build
+    runs-on: macos-26
+    timeout-minutes: 35
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
+      HOMEBREW_NO_AUTO_UPDATE: "1"
+      SIGNING_IDENTITY: "-"
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 2
+
+      - name: Show toolchain
+        run: |
+          xcodebuild -version
+          swift --version
+          uname -m
+
+      - name: Install conversion engines
+        run: |
+          brew install ffmpeg imagemagick exiftool pandoc
+          brew install --cask libreoffice
+          for engine in ffmpeg ffprobe magick exiftool pandoc; do
+            command -v "$engine"
+          done
+          test -x /Applications/LibreOffice.app/Contents/MacOS/soffice
+
+      - name: Validate scripts and app metadata
+        run: |
+          for script in scripts/*.sh; do
+            bash -n "$script"
+          done
+          for plist in scripts/*.plist; do
+            plutil -lint "$plist"
+          done
+          git diff --check HEAD^ HEAD
+
+      - name: Run tests
+        run: |
+          mkdir -p "$RUNNER_TEMP/turnstone-ci"
+          swift test --xunit-output "$RUNNER_TEMP/turnstone-ci/tests.xml" 2>&1 | tee "$RUNNER_TEMP/turnstone-ci/tests.log"
+
+      - name: Build and verify app
+        run: |
+          ./scripts/build-app.sh 2>&1 | tee "$RUNNER_TEMP/turnstone-ci/build.log"
+          codesign --verify --deep --strict dist/Turnstone.app
+          ditto -c -k --keepParent dist/Turnstone.app "$RUNNER_TEMP/turnstone-ci/Turnstone-arm64.zip"
+
+      - name: Upload test results and development build
+        if: ${{ always() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: Turnstone-ci-${{ github.run_number }}
+          path: ${{ runner.temp }}/turnstone-ci/
+          if-no-files-found: ignore
+          retention-days: 7

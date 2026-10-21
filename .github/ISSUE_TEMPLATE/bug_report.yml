@@ -1,0 +1,35 @@
+name: Bug report
+description: Report a reproducible problem with Turnstone.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: "For suspected security vulnerabilities, use [private reporting](https://github.com/Brian-An/turnstone/security/advisories/new). Share disposable samples rather than personal documents."
+  - type: input
+    id: environment
+    attributes:
+      label: Mac and app version
+      description: Include the macOS version, chip type, and Turnstone version or source commit.
+      placeholder: macOS 26.6, M1, Turnstone 0.1.0 preview 1
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Include the input format, chosen operation, and optional engines involved.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior and error text
+      description: Recent Jobs shows conversion errors. Screenshots or a minimal sample can help.
+    validations:
+      required: true

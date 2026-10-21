@@ -1,0 +1,18 @@
+name: Setup or usage question
+description: Ask for help building or using Turnstone.
+labels: [question]
+body:
+  - type: input
+    id: environment
+    attributes:
+      label: Mac and app version
+      description: Include the macOS version, chip type, and app version or source commit. For build problems, include your Xcode version.
+    validations:
+      required: true
+  - type: textarea
+    id: question
+    attributes:
+      label: What do you need help with?
+      description: Include what you tried and the relevant error text. Omit credentials and personal documents.
+    validations:
+      required: true
