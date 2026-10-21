@@ -7,8 +7,10 @@ import TurnstoneCore
 final class UtilityFeatureTests: XCTestCase {
     @MainActor
     func testBatchJobKeepsSuccessfulOutputsAndReportsEachFailedFile() async throws {
+        _ = NSApplication.shared
+        Windows.close("jobs")
         let folder = try fixtureFolder()
-        defer { try? FileManager.default.removeItem(at: folder) }
+        defer { Windows.close("jobs"); try? FileManager.default.removeItem(at: folder) }
         let first = try image(in: folder, name: "first.png")
         let second = try image(in: folder, name: "second.png")
         let broken = folder.appendingPathComponent("broken.png")
@@ -24,12 +26,15 @@ final class UtilityFeatureTests: XCTestCase {
         XCTAssertTrue(try XCTUnwrap(job.errors.first).contains("broken.png"))
         XCTAssertEqual(job.fraction, 1)
         XCTAssertEqual(job.message, "Finished with errors")
+        XCTAssertTrue(NSApp.windows.contains { $0.title == "Conversion Jobs" && $0.isVisible })
         XCTAssertEqual(try files.map { try Data(contentsOf: $0) }, originals)
         for output in job.outputs { XCTAssertNotNil(NSBitmapImageRep(data: try Data(contentsOf: output))) }
     }
 
     @MainActor
     func testImmediateJobCancellationPreservesSourcesAndSkipsRemainingFiles() async throws {
+        _ = NSApplication.shared
+        Windows.close("jobs")
         let folder = try fixtureFolder()
         defer { try? FileManager.default.removeItem(at: folder) }
         let files = try (0..<4).map { try image(in: folder, name: "image\($0).png") }
@@ -43,6 +48,7 @@ final class UtilityFeatureTests: XCTestCase {
         XCTAssertEqual(job.message, "Cancelled")
         XCTAssertTrue(job.outputs.isEmpty)
         XCTAssertTrue(job.errors.isEmpty)
+        XCTAssertFalse(NSApp.windows.contains { $0.title == "Conversion Jobs" && $0.isVisible })
         XCTAssertEqual(try files.map { try Data(contentsOf: $0) }, originals)
         XCTAssertFalse(try FileManager.default.contentsOfDirectory(at: folder, includingPropertiesForKeys: nil).contains { $0.pathExtension == "jpg" })
     }
